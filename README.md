@@ -1,7 +1,14 @@
 Simple HTTP server to control screen brightness on a Linux laptop
 
 # Installation
-Just clone the project to a location of your preference, install Flask
+
+The simplest way is to install from snap store.
+```bash
+$ sudo snap install screen-brightness-server --edge --devmode
+```
+
+If you are more of a "traditional" dev:
+Clone the project to a location of your preference, install Flask
 and create a systemd job to run automatically on boot.
 
 To install Flask do:
