@@ -17,53 +17,73 @@
 #
 
 import os
-import shlex
-import subprocess
 import time
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 DRIVER_ROOT = '/sys/class/backlight/intel_backlight/'
 BRIGHTNESS_CONFIG_FILE = os.path.join(DRIVER_ROOT, 'brightness')
 BRIGHTNESS_MAX_REFERENCE_FILE = os.path.join(DRIVER_ROOT, 'max_brightness')
 BRIGHTNESS_STEP = 5
 BRIGHTNESS_MIN = 1
+with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
+    BRIGHTNESS_MAX = int(file.read().strip())
 
 app = Flask(__name__)
 
 
-def run(command):
-    return subprocess.check_output(shlex.split(command), universal_newlines=True).strip()
+class BrightnessControl:
+    def __init__(self):
+        super().__init__()
+        self.change_in_progress = False
 
+    @property
+    def brightness_current(self):
+        with open(BRIGHTNESS_CONFIG_FILE) as file:
+            return int(file.read().strip())
 
-def set_brightness(percent):
-    brightness_max = int(run('cat {}'.format(BRIGHTNESS_MAX_REFERENCE_FILE)))
-    brightness_current = int(run('cat {}'.format(BRIGHTNESS_CONFIG_FILE)))
-    brightness_requested = int((percent / 100) * brightness_max)
+    @property
+    def brightness_current_percent(self):
+        return int((self.brightness_current / BRIGHTNESS_MAX) * 100)
 
-    if brightness_requested == brightness_current:
-        return
+    def write_brightness_value(self, value):
+        with open(BRIGHTNESS_CONFIG_FILE, 'w') as file:
+            file.write(str(value))
 
-    brightness = brightness_current
-    if brightness_requested > brightness_current:
-        while brightness <= brightness_max and brightness <= brightness_requested:
-            os.system('echo {} > {}'.format(brightness, BRIGHTNESS_CONFIG_FILE))
-            brightness += BRIGHTNESS_STEP
-            time.sleep(0.01)
-    else:
-        while brightness > BRIGHTNESS_MIN and brightness >= brightness_requested:
-            os.system('echo {} > {}'.format(brightness, BRIGHTNESS_CONFIG_FILE))
-            brightness -= BRIGHTNESS_STEP
+    def set_brightness(self, percent):
+        while self.change_in_progress:
             time.sleep(0.01)
 
+        brightness_requested = int((percent / 100) * BRIGHTNESS_MAX)
+        if brightness_requested == self.brightness_current:
+            return
 
-@app.route('/brightness', methods=['POST'])
+        brightness = self.brightness_current
+        if brightness_requested > self.brightness_current:
+            self.change_in_progress = True
+            while self.change_in_progress and brightness <= BRIGHTNESS_MAX and brightness <= brightness_requested:
+                self.write_brightness_value(brightness)
+                brightness += BRIGHTNESS_STEP
+                time.sleep(0.01)
+        else:
+            self.change_in_progress = True
+            while self.change_in_progress and brightness >= BRIGHTNESS_MIN and brightness >= brightness_requested:
+                self.write_brightness_value(brightness)
+                brightness -= BRIGHTNESS_STEP
+                time.sleep(0.01)
+
+        self.change_in_progress = False
+
+
+@app.route('/brightness', methods=['GET', 'POST'])
 def parse_request():
-    if 'brightness' not in request.json:
-        return 'Invalid request, must include brightness value', 400
-
-    set_brightness(int(request.json['brightness']))
-    return 'DONE', 200
+    if request.method == 'POST':
+        if 'brightness' not in request.json:
+            return 'Invalid request, must include brightness value', 400
+        controller.set_brightness(int(request.json['brightness']))
+        return jsonify({'status': 'done'})
+    elif request.method == 'GET':
+        return jsonify({'brightness': controller.brightness_current_percent})
 
 
 if __name__ == '__main__':
@@ -71,5 +91,6 @@ if __name__ == '__main__':
         print('Must run as root.')
         exit(1)
 
+    controller = BrightnessControl()
     app.run(debug=False, host='127.0.0.1', port=5020)
 
