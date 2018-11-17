@@ -16,10 +16,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
 import os
 import time
-
-from flask import Flask, request, jsonify
 
 DRIVER_ROOT = '/sys/class/backlight/intel_backlight/'
 BRIGHTNESS_CONFIG_FILE = os.path.join(DRIVER_ROOT, 'brightness')
@@ -28,8 +28,17 @@ BRIGHTNESS_STEP = 5
 BRIGHTNESS_MIN = 1
 with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
     BRIGHTNESS_MAX = int(file.read().strip())
+BRIGHTNESS_ENDPOINT = "/brightness"
 
-app = Flask(__name__)
+
+def write_brightness_value(value):
+    with open(BRIGHTNESS_CONFIG_FILE, 'w') as config_file:
+        config_file.write(str(value))
+
+
+def read_brightness_value():
+    with open(BRIGHTNESS_CONFIG_FILE) as config_file:
+        return int(config_file.read().strip())
 
 
 class BrightnessControl:
@@ -39,16 +48,11 @@ class BrightnessControl:
 
     @property
     def brightness_current(self):
-        with open(BRIGHTNESS_CONFIG_FILE) as file:
-            return int(file.read().strip())
+        return read_brightness_value()
 
     @property
     def brightness_current_percent(self):
         return int((self.brightness_current / BRIGHTNESS_MAX) * 100)
-
-    def write_brightness_value(self, value):
-        with open(BRIGHTNESS_CONFIG_FILE, 'w') as file:
-            file.write(str(value))
 
     def set_brightness(self, percent):
         while self.change_in_progress:
@@ -62,28 +66,56 @@ class BrightnessControl:
         if brightness_requested > self.brightness_current:
             self.change_in_progress = True
             while self.change_in_progress and brightness <= BRIGHTNESS_MAX and brightness <= brightness_requested:
-                self.write_brightness_value(brightness)
+                write_brightness_value(brightness)
                 brightness += BRIGHTNESS_STEP
                 time.sleep(0.01)
         else:
             self.change_in_progress = True
             while self.change_in_progress and brightness >= BRIGHTNESS_MIN and brightness >= brightness_requested:
-                self.write_brightness_value(brightness)
+                write_brightness_value(brightness)
                 brightness -= BRIGHTNESS_STEP
                 time.sleep(0.01)
 
         self.change_in_progress = False
 
 
-@app.route('/brightness', methods=['GET', 'POST'])
-def parse_request():
-    if request.method == 'POST':
-        if 'brightness' not in request.json:
-            return 'Invalid request, must include brightness value', 400
-        controller.set_brightness(int(request.json['brightness']))
-        return jsonify({'status': 'done'})
-    elif request.method == 'GET':
-        return jsonify({'brightness': controller.brightness_current_percent})
+class RestHTTPRequestHandler(BaseHTTPRequestHandler):
+
+    def respond(self, data_dict, code):
+        self.send_response(code)
+        self.end_headers()
+        self.wfile.write(json.dumps(data_dict).encode())
+
+    def get_current_brightness(self):
+        self.respond({'brightness': controller.brightness_current_percent}, 200)
+
+    def send_bad_request(self, message):
+        self.respond({'message': message}, 400)
+
+    def do_GET(self):
+        if self.path == BRIGHTNESS_ENDPOINT:
+            self.get_current_brightness()
+        else:
+            self.send_bad_request("Invalid URL")
+
+    def do_POST(self):
+        if self.path != BRIGHTNESS_ENDPOINT:
+            self.send_bad_request("Invalid URL")
+            return
+
+        content_type = self.headers.get('Content-Type')
+        if 'application/json' in content_type:
+            content_length = self.headers.get('Content-Length')
+            data = self.rfile.read(int(content_length)).decode()
+            data = json.loads(data)
+            if 'brightness' in data:
+                value = int(data.get('brightness'))
+                controller.set_brightness(value)
+                self.get_current_brightness()
+            else:
+                self.send_bad_request("brightness parameter missing.")
+        else:
+            self.send_bad_request("We only support json input")
 
 
 if __name__ == '__main__':
@@ -91,6 +123,7 @@ if __name__ == '__main__':
         print('Must run as root.')
         exit(1)
 
+    httpd = HTTPServer(('127.0.0.1', 5020), RestHTTPRequestHandler)
     controller = BrightnessControl()
-    app.run(debug=False, host='127.0.0.1', port=5020)
-
+    while True:
+        httpd.handle_request()

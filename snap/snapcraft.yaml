@@ -8,25 +8,15 @@ grade: devel
 confinement: devmode
 
 parts:
-  flask:
-    plugin: nil
-    override-build: |
-      snapcraftctl build
-      mkdir -p ${SNAPCRAFT_PART_INSTALL}/flask
-      pip3 install --no-cache-dir flask -t ${SNAPCRAFT_PART_INSTALL}/flask
-    build-packages:
-      - python3-pip
   server:
     plugin: dump
     source: .
     stage:
       - main.py
 
-
 apps:
   screen-brightness-server:
     command: python3 -u $SNAP/main.py
-    environment:
-      PYTHONPATH: $SNAP/flask
     daemon: simple
     restart-condition: always
+
