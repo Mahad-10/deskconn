@@ -45,7 +45,7 @@ class ChangeBrightnessResource(Resource):
         return {'brightness': controller.brightness_current_percent}, 200
 
 
-api.add_resource(ChangeBrightnessResource, '/brightness')
+api.add_resource(ChangeBrightnessResource, '/api/brightness')
 
 
 if __name__ == '__main__':
@@ -54,4 +54,8 @@ if __name__ == '__main__':
         exit(1)
 
     controller = controller.BrightnessControl()
-    app.run(host='127.0.0.1', port=5020, debug=True)
+    app.run(
+        host=os.environ.get("BRIGHTNESS_SERVER_HOST", "127.0.0.1"),
+        port=os.environ.get("BRIGHTNESS_SERVER_PORT", 5020),
+        debug=False
+    )

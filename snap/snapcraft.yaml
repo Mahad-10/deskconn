@@ -9,6 +9,9 @@ description: |
 grade: devel
 confinement: devmode
 
+architectures:
+  - build-on: [i386, amd64]
+
 parts:
   server:
     plugin: dump
