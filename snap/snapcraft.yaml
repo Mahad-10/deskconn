@@ -6,7 +6,7 @@ description: |
 
   Currently only supports machines with Intel GPU.
 
-grade: devel
+grade: stable
 confinement: devmode
 
 architectures:
