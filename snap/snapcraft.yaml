@@ -1,8 +1,10 @@
 name: screen-brightness-server
-version: '0.1'
+version: '0.2'
 summary: Expose screen brightness control to local http server
 description: |
-  TBD.
+  Expose screen brightness control to local http server
+
+  Currently only supports machines with Intel GPU.
 
 grade: devel
 confinement: devmode
@@ -13,10 +15,15 @@ parts:
     source: .
     stage:
       - main.py
+      - controller.py
+  flask:
+    plugin: python
+    python-packages:
+      - flask
+      - flask_restful
 
 apps:
   screen-brightness-server:
     command: python3 -u $SNAP/main.py
     daemon: simple
     restart-condition: always
-
