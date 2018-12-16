@@ -18,34 +18,36 @@
 
 import os
 
-from flask import Flask
-from flask_restful import Api, Resource, reqparse
+from autobahn.asyncio import wamp
 
 import controller
 
-app = Flask(__name__)
-api = Api(app)
+
+def validate_and_sanitize_data(value):
+    assert (isinstance(value, int) or isinstance(value, float)), 'brightness must be either int or float'
+
+    if value < 1:
+        return 1
+    if value > 100:
+        return 100
+    return value
 
 
-class ChangeBrightnessResource(Resource):
-    def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('brightness', type=float, help='Should be a number between 1 and 100', required=True)
-        args = parser.parse_args(strict=True)
-        brightness = args['brightness']
-        # Sanitize...
-        if brightness < 1:
-            brightness = 1
-        elif brightness > 100:
-            brightness = 100
-        controller.set_brightness(brightness)
-        return {'brightness': controller.brightness_current_percent}, 200
+class Component(wamp.ApplicationSession):
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.controller = controller.BrightnessControl(self)
 
-    def get(self):
-        return {'brightness': controller.brightness_current_percent}, 200
+    async def onJoin(self, details):
+        def set_brightness(value):
+            self.controller.set_brightness(validate_and_sanitize_data(value))
+            self.publish("io.crossbar.brightness_changed", value)
 
+        reg = await self.register(set_brightness, 'io.crossbar.set_brightness')
+        print("registered '{}' with id {}".format(reg.procedure, reg.id))
 
-api.add_resource(ChangeBrightnessResource, '/api/brightness')
+        reg2 = await self.register(self.controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
+        print("registered '{}' with id {}".format(reg2.procedure, reg2.id))
 
 
 if __name__ == '__main__':
@@ -53,9 +55,5 @@ if __name__ == '__main__':
         print('Must run as root.')
         exit(1)
 
-    controller = controller.BrightnessControl()
-    app.run(
-        host=os.environ.get("BRIGHTNESS_SERVER_HOST", "127.0.0.1"),
-        port=os.environ.get("BRIGHTNESS_SERVER_PORT", 5020),
-        debug=False
-    )
+    runner = wamp.ApplicationRunner(os.environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:5020/ws"), "realm1")
+    runner.run(Component)

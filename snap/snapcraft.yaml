@@ -23,11 +23,10 @@ parts:
     stage:
       - main.py
       - controller.py
-  flask:
+  autobahn:
     plugin: python
     python-packages:
-      - flask
-      - flask_restful
+      - autobahn[asyncio]
 
 apps:
   screen-brightness-server:
