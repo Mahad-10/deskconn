@@ -1,5 +1,5 @@
 name: screen-brightness-server
-version: '0.2'
+version: '0.3'
 summary: Expose screen brightness control to local http server
 description: |
   Expose screen brightness control to local http server
@@ -20,9 +20,11 @@ parts:
   server:
     plugin: dump
     source: .
-    stage:
+    prime:
       - main.py
       - controller.py
+      - component.py
+      - constants.py
   autobahn:
     plugin: python
     python-packages:
@@ -30,6 +32,13 @@ parts:
 
 apps:
   screen-brightness-server:
-    command: python3 -u $SNAP/main.py
-    daemon: simple
-    restart-condition: always
+    command: python3 -c "from crossbar import run; run(['--help'])"
+    environment:
+      PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
+
+plugs:
+  crossbar:
+    interface: content
+    content: executables
+    default-provider: crossbar:crossbar
+    target: $SNAP/crossbar
