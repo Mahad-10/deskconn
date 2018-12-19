@@ -20,34 +20,7 @@ import os
 
 from autobahn.asyncio import wamp
 
-import controller
-
-
-def validate_and_sanitize_data(value):
-    assert (isinstance(value, int) or isinstance(value, float)), 'brightness must be either int or float'
-
-    if value < 1:
-        return 1
-    if value > 100:
-        return 100
-    return value
-
-
-class Component(wamp.ApplicationSession):
-    def __init__(self, config=None):
-        super().__init__(config)
-        self.controller = controller.BrightnessControl(self)
-
-    async def onJoin(self, details):
-        def set_brightness(value):
-            self.controller.set_brightness(validate_and_sanitize_data(value))
-            self.publish("io.crossbar.brightness_changed", value)
-
-        reg = await self.register(set_brightness, 'io.crossbar.set_brightness')
-        print("registered '{}' with id {}".format(reg.procedure, reg.id))
-
-        reg2 = await self.register(self.controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
-        print("registered '{}' with id {}".format(reg2.procedure, reg2.id))
+import component
 
 
 if __name__ == '__main__':
@@ -55,5 +28,8 @@ if __name__ == '__main__':
         print('Must run as root.')
         exit(1)
 
-    runner = wamp.ApplicationRunner(os.environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:5020/ws"), "realm1")
-    runner.run(Component)
+    runner = wamp.ApplicationRunner(
+        os.environ.get("SBS_CROSSBAR_INSTANCE", "ws://127.0.0.1:5020/ws"),
+        os.environ.get("SBS_CROSSBAR_REALM", "realm1")
+    )
+    runner.run(component.BrightnessComponent)
