@@ -25,6 +25,7 @@ parts:
       - controller.py
       - component.py
       - constants.py
+      - crossbar-config/*
   autobahn:
     plugin: python
     python-packages:
@@ -32,7 +33,9 @@ parts:
 
 apps:
   screen-brightness-server:
-    command: python3 -c "from crossbar import run; run(['--help'])"
+    command: python3 -c "import os; from crossbar import run; run(['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'), '--cbdir', os.environ.get('SNAP_USER_DATA')])"
+    daemon: simple
+    restart-condition: always
     environment:
       PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
 
