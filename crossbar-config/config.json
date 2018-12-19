@@ -46,8 +46,6 @@
         {
             "type": "guest",
             "executable": "python3",
-            // for non-snap installs
-            // "arguments": ["-u", "main.py"]
             "arguments": ["-u", "/snap/screen-brightness-server/current/main.py"]
         }
     ]
