@@ -35,7 +35,7 @@ apps:
   screen-brightness-server:
     command: python3 -c "import os; from crossbar import run; run(['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'), '--cbdir', os.environ.get('SNAP_USER_DATA')])"
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     environment:
       PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
 
