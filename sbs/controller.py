@@ -44,11 +44,11 @@ class BrightnessControl:
         with open(BRIGHTNESS_CONFIG_FILE) as config_file:
             return int(config_file.read().strip())
 
-    def write_brightness_value(self, value):
+    def write_brightness_value(self, value, publish=True):
         with open(BRIGHTNESS_CONFIG_FILE, 'w') as config_file:
             config_file.write(str(value))
             # Publish brightness changes
-            if self.component.is_connected():
+            if publish and self.component.is_connected():
                 self.component.publish("io.crossbar.brightness_changed", self.get_current_brightness_percentage(value))
 
     def get_current_brightness_percentage(self, current_brightness_raw=0):
@@ -58,7 +58,7 @@ class BrightnessControl:
         # Seems we need to read from the backend
         return int((self.brightness_current / BRIGHTNESS_MAX) * 100)
 
-    def set_brightness(self, percent):
+    def set_brightness(self, percent, publish=True):
         percent = validate_and_sanitize_brightness_value(percent)
         # Abort any in progress change
         self.change_in_progress = False
@@ -73,20 +73,20 @@ class BrightnessControl:
                 if not self.change_in_progress:
                     break
                 brightness += BRIGHTNESS_STEP
-                self.write_brightness_value(brightness)
+                self.write_brightness_value(brightness, publish)
                 time.sleep(0.02)
             if self.change_in_progress:
                 brightness += int(decimal_steps * BRIGHTNESS_STEP)
-                self.write_brightness_value(brightness)
+                self.write_brightness_value(brightness, publish)
         else:
             decimal_steps, full_steps = math.modf((brightness - brightness_requested) / BRIGHTNESS_STEP)
             for i in range(int(full_steps)):
                 if not self.change_in_progress:
                     break
                 brightness -= BRIGHTNESS_STEP
-                self.write_brightness_value(brightness)
+                self.write_brightness_value(brightness, publish)
                 time.sleep(0.02)
             if self.change_in_progress:
                 brightness -= int(decimal_steps * BRIGHTNESS_STEP)
-                self.write_brightness_value(brightness)
+                self.write_brightness_value(brightness, publish)
         self.change_in_progress = False
