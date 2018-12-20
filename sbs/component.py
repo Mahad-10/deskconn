@@ -25,7 +25,8 @@ from sbs.controller import BrightnessControl
 from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
 watcher = None
-publish_change = True
+_publisher_id = None
+_reset_publisher = False
 
 brightness_component = component.Component(
     transports=[
@@ -47,10 +48,12 @@ brightness_component = component.Component(
 async def register_procedures(session, _details):
     controller = BrightnessControl()
 
-    def set_brightness(percentage, publish=True):
-        global publish_change
-        publish_change = publish
+    def set_brightness(percentage, publisher_id=None):
+        global _publisher_id
+        global _reset_publisher
+        _publisher_id = publisher_id
         controller.set_brightness(percentage)
+        _reset_publisher = True
 
     reg = await session.register(set_brightness, 'io.crossbar.set_brightness')
     print("registered '{}'".format(reg.procedure))
@@ -67,12 +70,15 @@ async def enable_watch(session, _details):
     watcher.watch(BRIGHTNESS_CONFIG_FILE, flags=aionotify.Flags.MODIFY, alias='brightness_change')
     while not watcher.closed:
         await watcher.get_event()
-        global publish_change
-        if not publish_change:
-            publish_change = True
-            continue
+        global _publisher_id
+        global _reset_publisher
         with open(BRIGHTNESS_CONFIG_FILE) as file:
-            session.publish("io.crossbar.brightness_changed", (int(file.read().strip()) / BRIGHTNESS_MAX) * 100)
+            session.publish("io.crossbar.brightness_changed",
+                            percentage=int((int(file.read().strip()) / BRIGHTNESS_MAX) * 100),
+                            publisher_id=_publisher_id)
+            if _reset_publisher:
+                _publisher_id = None
+                _reset_publisher = False
 
 
 @brightness_component.on_leave
