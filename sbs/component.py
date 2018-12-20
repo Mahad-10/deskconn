@@ -16,10 +16,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+import asyncio
+
+import aionotify
 from autobahn.asyncio import component
 
 from sbs.controller import BrightnessControl
+from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
+watcher = None
+publish_change = True
 
 brightness_component = component.Component(
     transports=[
@@ -38,11 +44,39 @@ brightness_component = component.Component(
 
 
 @brightness_component.on_join
-async def register_procedures(session, details):
-    controller = BrightnessControl(session)
+async def register_procedures(session, _details):
+    controller = BrightnessControl()
 
-    reg = await session.register(controller.set_brightness, 'io.crossbar.set_brightness')
+    def set_brightness(percentage, publish=True):
+        global publish_change
+        publish_change = publish
+        controller.set_brightness(percentage)
+
+    reg = await session.register(set_brightness, 'io.crossbar.set_brightness')
     print("registered '{}'".format(reg.procedure))
 
     reg2 = await session.register(controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
     print("registered '{}'".format(reg2.procedure))
+
+
+@brightness_component.on_join
+async def enable_watch(session, _details):
+    global watcher
+    watcher = aionotify.Watcher()
+    await watcher.setup(asyncio.get_event_loop())
+    watcher.watch(BRIGHTNESS_CONFIG_FILE, flags=aionotify.Flags.MODIFY, alias='brightness_change')
+    while not watcher.closed:
+        await watcher.get_event()
+        global publish_change
+        if not publish_change:
+            publish_change = True
+            continue
+        with open(BRIGHTNESS_CONFIG_FILE) as file:
+            session.publish("io.crossbar.brightness_changed", (int(file.read().strip()) / BRIGHTNESS_MAX) * 100)
+
+
+@brightness_component.on_leave
+async def cleanup(_session, _details):
+    global watcher
+    if watcher and not watcher.closed:
+        watcher.close()

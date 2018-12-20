@@ -27,8 +27,7 @@ parts:
       - sbs/*
   autobahn:
     plugin: python
-    python-packages:
-      - autobahn[asyncio,serialization]
+    requirements: requirements.txt
 
 apps:
   crossbar:

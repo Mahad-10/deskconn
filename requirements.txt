@@ -1,2 +1,2 @@
 autobahn[asyncio,serialization]
-crossbar
+aionotify
