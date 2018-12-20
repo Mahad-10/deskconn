@@ -42,11 +42,6 @@
                     }
                 }
             ]
-        },
-        {
-            "type": "guest",
-            "executable": "python3",
-            "arguments": ["-u", "/snap/screen-brightness-server/current/main.py"]
         }
     ]
 }

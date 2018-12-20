@@ -1,2 +1,2 @@
-autobahn[asyncio]
+autobahn[asyncio,serialization]
 crossbar

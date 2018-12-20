@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 #
 # Copyright (C) 2018  Omer Akram
@@ -20,9 +20,9 @@
 
 import os
 
-from autobahn.asyncio import wamp
+from autobahn.asyncio import component
 
-from sbs.component import BrightnessComponent
+from sbs.component import brightness_component
 
 
 if __name__ == '__main__':
@@ -30,8 +30,4 @@ if __name__ == '__main__':
         print('Must run as root.')
         exit(1)
 
-    runner = wamp.ApplicationRunner(
-        os.environ.get("SBS_CROSSBAR_INSTANCE", "ws://127.0.0.1:5020/ws"),
-        os.environ.get("SBS_CROSSBAR_REALM", "realm1")
-    )
-    runner.run(BrightnessComponent)
+    component.run([brightness_component])

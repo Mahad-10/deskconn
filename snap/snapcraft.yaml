@@ -28,7 +28,7 @@ parts:
   autobahn:
     plugin: python
     python-packages:
-      - autobahn[asyncio]
+      - autobahn[asyncio,serialization]
 
 apps:
   crossbar:
@@ -40,6 +40,9 @@ apps:
   component:
     command: start-component
     daemon: simple
+    restart-condition: always
+    environment:
+      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
 
 plugs:
   crossbar:

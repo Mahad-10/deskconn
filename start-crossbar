@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 #
 # Copyright (C) 2018  Omer Akram
@@ -19,10 +19,27 @@
 #
 
 import os
+import time
 
-from crossbar import run
+
+def is_snap():
+    return 'screen-brightness-server' in os.environ.get('SNAP', '')
+
+
+def ensure_crossbar_available_and_run():
+    try:
+        from crossbar import run
+        run(['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'), '--cbdir',
+             os.environ.get('SNAP_USER_DATA')])
+    except ImportError:
+        time.sleep(5)
+        print("Crossbar was not found during previous attempt, trying again")
+        ensure_crossbar_available_and_run()
 
 
 if __name__ == '__main__':
-    run(['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'), '--cbdir',
-         os.environ.get('SNAP_USER_DATA')])
+    if is_snap():
+        ensure_crossbar_available_and_run()
+    else:
+        from crossbar import run
+        run(['start', '--cbdir', 'crossbar-config'])
