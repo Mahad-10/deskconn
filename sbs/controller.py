@@ -1,7 +1,7 @@
 import math
 import time
 
-from constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_STEP, BRIGHTNESS_MAX
+from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_STEP, BRIGHTNESS_MAX
 
 
 def validate_and_sanitize_brightness_value(value):

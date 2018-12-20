@@ -21,23 +21,25 @@ parts:
     plugin: dump
     source: .
     prime:
-      - main.py
-      - controller.py
-      - component.py
-      - constants.py
+      - start-crossbar
+      - start-component
       - crossbar-config/*
+      - sbs/*
   autobahn:
     plugin: python
     python-packages:
       - autobahn[asyncio]
 
 apps:
-  screen-brightness-server:
-    command: python3 -c "import os; from crossbar import run; run(['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'), '--cbdir', os.environ.get('SNAP_USER_DATA')])"
+  crossbar:
+    command: start-crossbar
     daemon: simple
-    restart-condition: never
+    restart-condition: always
     environment:
       PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
+  component:
+    command: start-component
+    daemon: simple
 
 plugs:
   crossbar:
