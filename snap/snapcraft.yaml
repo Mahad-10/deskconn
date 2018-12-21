@@ -35,13 +35,13 @@ apps:
     daemon: simple
     restart-condition: always
     environment:
-      PYTHONPATH: "$SNAP/crossbar:$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
+      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$SNAP/crossbar"
   component:
     command: start-component
     daemon: simple
     restart-condition: always
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
+      PYTHONPATH: "$SNAP/lib/python3.5/site-packages"
 
 plugs:
   crossbar:
