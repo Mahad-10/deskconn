@@ -38,7 +38,7 @@ apps:
     daemon: simple
     restart-condition: always
     environment:
-      PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
+      PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH:$SNAP/lib/python3.5/site-packages"
   component:
     command: start-component
     daemon: simple
