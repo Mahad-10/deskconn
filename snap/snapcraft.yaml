@@ -27,7 +27,10 @@ parts:
       - sbs/*
   autobahn:
     plugin: python
-    requirements: requirements.txt
+    python-packages:
+      - autobahn[asyncio,serialization]
+      - aionotify
+      - zeroconf
 
 apps:
   crossbar:
@@ -35,13 +38,13 @@ apps:
     daemon: simple
     restart-condition: always
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$SNAP/crossbar"
+      PYTHONPATH: "$SNAP/crossbar:$PYTHONPATH"
   component:
     command: start-component
     daemon: simple
     restart-condition: always
     environment:
-      PYTHONPATH: "$SNAP/lib/python3.5/site-packages"
+      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
 
 plugs:
   crossbar:
