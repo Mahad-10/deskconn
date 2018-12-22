@@ -91,7 +91,7 @@ def is_snap():
 
 
 def main():
-    params = ['start', '--cbdir']
+    params = ['start']
     if is_snap():
         params.append('--config')
         params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
@@ -99,6 +99,7 @@ def main():
     else:
         cbdir = 'crossbar-config'
 
+    params.append('--cbdir')
     params.append(cbdir)
     discovery = ServiceDiscovery()
     discovery.set_wait_file(os.path.join(cbdir, 'node.pid'))
