@@ -20,13 +20,11 @@
 
 import os
 import socket
+import threading
 import time
 
+from crossbar import run
 from zeroconf import ServiceInfo, Zeroconf
-
-
-def is_snap():
-    return 'screen-brightness-server' in os.environ.get('SNAP', '')
 
 
 def get_local_address():
@@ -37,44 +35,80 @@ def get_local_address():
     return res
 
 
-def actually_run(func, parameters):
-    service_type = '_crossbar._tcp'
-    service_name = 'Screen brightness server'
-    info = ServiceInfo(
-        type_="{}.local.".format(service_type),
-        name="{}.{}.local.".format(service_name, service_type),
-        address=socket.inet_aton(get_local_address()),
-        # Should be same as in crossbar config file
-        port=5020,
-        properties={}
-    )
-    zeroconf = Zeroconf()
+class ServiceDiscovery:
+    def __init__(self, type_='_crossbar._tcp', name='Screen brightness server', address='0.0.0.0', port=5020):
+        super().__init__()
+
+        self.info = ServiceInfo(
+            type_="{}.local.".format(type_),
+            name="{}.{}.local.".format(name, type_),
+            address=socket.inet_aton(get_local_address() if address == '0.0.0.0' else address),
+            port=port,
+            properties={}
+        )
+
+        self.zeroconf = Zeroconf()
+        self.wait_path = None
+        self.wait_time = 20
+
+    def _actually_publish(self):
+        print("Registering service: {}".format(self.info.name))
+        self.zeroconf.register_service(self.info)
+        print("Registered service: {}".format(self.info.name))
+
+    def ensure_wait_path(self):
+        for i in range(self.wait_time):
+            if os.path.exists(self.wait_path):
+                break
+
+            if i == self.wait_time - 1:
+                raise ValueError("Waited {} seconds but did not find file at {}".format(
+                    self.wait_time, self.wait_path))
+            time.sleep(1)
+        self._actually_publish()
+
+    def start_publishing(self):
+        if self.wait_path:
+            threading.Thread(target=self.ensure_wait_path).start()
+        else:
+            self._actually_publish()
+
+    def stop_publishing(self):
+        print("Unregistering service: {}".format(self.info.name))
+        self.zeroconf.unregister_service(self.info)
+        print("Unregistered service: {}".format(self.info.name))
+        self.zeroconf.close()
+
+    def set_wait_file(self, path):
+        self.wait_path = path
+
+    def set_wait_time(self, seconds):
+        self.wait_time = seconds
+
+
+def is_snap():
+    return 'screen-brightness-server' in os.environ.get('SNAP', '')
+
+
+def main():
+    params = ['start', '--cbdir']
+    if is_snap():
+        params.append('--config')
+        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
+        cbdir = os.environ.get('SNAP_USER_DATA')
+    else:
+        cbdir = 'crossbar-config'
+
+    params.append(cbdir)
+    discovery = ServiceDiscovery()
+    discovery.set_wait_file(os.path.join(cbdir, 'node.pid'))
+    discovery.set_wait_time(10)
     try:
-        print("Registering service: {}".format(service_name))
-        zeroconf.register_service(info)
-        print("Registered service: {}".format(service_name))
-        func(parameters)
+        discovery.start_publishing()
+        run(params)
     finally:
-        print("Unregistering service: {}".format(service_name))
-        zeroconf.unregister_service(info)
-        print("Unregistered service: {}".format(service_name))
-        zeroconf.close()
-
-
-def ensure_crossbar_available_and_run():
-    try:
-        from crossbar import run
-        actually_run(run, ['start', '--config', os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'),
-                           '--cbdir', os.environ.get('SNAP_USER_DATA')])
-    except ImportError:
-        time.sleep(5)
-        print("Crossbar was not found during previous attempt, trying again")
-        ensure_crossbar_available_and_run()
+        discovery.stop_publishing()
 
 
 if __name__ == '__main__':
-    if is_snap():
-        ensure_crossbar_available_and_run()
-    else:
-        from crossbar import run
-        actually_run(run, ['start', '--cbdir', 'crossbar-config'])
+    main()
