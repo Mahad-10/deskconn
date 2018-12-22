@@ -1,3 +1,5 @@
-autobahn[asyncio,serialization]
-aionotify
+autobahn[twisted,serialization]
+crossbar
+twisted
+txaio
 zeroconf

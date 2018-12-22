@@ -18,16 +18,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import os
+from autobahn.twisted import wamp
+from autobahn.wamp import types as wamp_types
+import txaio
 
-from autobahn.asyncio import component
-
-from sbs.component import brightness_component
+from sbs.component import BrightnessServerSession
 
 
 if __name__ == '__main__':
-    if os.geteuid() != 0:
-        print('Must run as root.')
-        exit(1)
-
-    component.run([brightness_component])
+    txaio.start_logging(level='debug')
+    session = BrightnessServerSession(wamp_types.ComponentConfig('realm1', {}))
+    runner = wamp.ApplicationRunner(u'rs://localhost:5020', 'realm1')
+    runner.run(session, auto_reconnect=True)

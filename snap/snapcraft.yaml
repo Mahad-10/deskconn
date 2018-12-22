@@ -22,26 +22,20 @@ parts:
     source: .
     prime:
       - start-crossbar
-      - start-component
       - crossbar-config
       - sbs
   autobahn:
     plugin: python
-    requirements: requirements.txt
+    python-packages:
+      - zeroconf
 
 apps:
-  crossbar:
+  server:
     command: start-crossbar
     daemon: simple
     restart-condition: always
     environment:
       PYTHONPATH: "$SNAP/crossbar:$SNAP/lib/python3.5/site-packages"
-  component:
-    command: start-component
-    daemon: simple
-    restart-condition: always
-    environment:
-      PYTHONPATH: "$SNAP/lib/python3.5/site-packages"
 
 plugs:
   crossbar:

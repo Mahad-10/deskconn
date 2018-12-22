@@ -16,73 +16,57 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import asyncio
-
-import aionotify
-from autobahn.asyncio import component
+from autobahn.twisted import wamp
+from twisted.internet import inotify
+from twisted.python import filepath
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet import threads
 
 from sbs.controller import BrightnessControl
 from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
-watcher = None
-_publisher_id = None
-_reset_publisher = False
 
-brightness_component = component.Component(
-    transports=[
-        {
-            "type": "websocket",
-            "url": "ws://localhost:5020/ws",
-            "endpoint": {
-                "type": "tcp",
-                "host": "localhost",
-                "port": 5020
-            }
-        }
-    ],
-    realm="realm1",
-)
+class BrightnessServerSession(wamp.ApplicationSession):
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.controller = BrightnessControl()
+        self.notifier = inotify.INotify()
+        self._publisher_id = None
+        self._reset_publisher = False
 
+    def onConnect(self):
+        self.log.info('transport connected')
+        self.join(self.config.realm)
 
-@brightness_component.on_join
-async def register_procedures(session, _details):
-    controller = BrightnessControl()
+    @inlineCallbacks
+    def onJoin(self, details):
+        self.log.info('session joined: {}'.format(details))
+        self.notifier.startReading()
+        self.notifier.watch(filepath.FilePath(BRIGHTNESS_CONFIG_FILE), callbacks=[self.publish_brightness_changed])
 
-    def set_brightness(percentage, publisher_id=None):
-        global _publisher_id
-        global _reset_publisher
-        _publisher_id = publisher_id
-        controller.set_brightness(percentage)
-        _reset_publisher = True
+        yield self.register(self.set_brightness, 'io.crossbar.set_brightness')
+        yield self.register(self.controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
 
-    reg = await session.register(set_brightness, 'io.crossbar.set_brightness')
-    print("registered '{}'".format(reg.procedure))
+    def onLeave(self, details):
+        self.log.info('session left: {}'.format(details))
+        self.notifier.stopReading()
+        self.disconnect()
 
-    reg2 = await session.register(controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
-    print("registered '{}'".format(reg2.procedure))
+    @inlineCallbacks
+    def set_brightness(self, percentage, publisher_id=None):
+        def actually_set_brightness(percent):
+            self._publisher_id = publisher_id
+            self.controller.set_brightness(percent)
+            self._reset_publisher = True
 
+        res = yield threads.deferToThread(actually_set_brightness, percentage)
+        returnValue(res)
 
-@brightness_component.on_join
-async def enable_watch(session, _details):
-    global watcher
-    watcher = aionotify.Watcher()
-    await watcher.setup(asyncio.get_event_loop())
-    watcher.watch(BRIGHTNESS_CONFIG_FILE, flags=aionotify.Flags.MODIFY, alias='brightness_change')
-    while not watcher.closed:
-        await watcher.get_event()
-        global _publisher_id
-        global _reset_publisher
-        with open(BRIGHTNESS_CONFIG_FILE) as file:
-            session.publish("io.crossbar.brightness_changed",
-                            percentage=int((int(file.read().strip()) / BRIGHTNESS_MAX) * 100),
-                            publisher_id=_publisher_id)
-            if _reset_publisher:
-                _publisher_id = None
-                _reset_publisher = False
-
-
-@brightness_component.on_leave
-async def cleanup(_session, _details):
-    global watcher
-    if watcher and not watcher.closed:
-        watcher.close()
+    def publish_brightness_changed(self, _ignored, file_path, _mask):
+        with open(file_path.path) as file:
+            self.publish("io.crossbar.brightness_changed",
+                         percentage=int((int(file.read().strip()) / BRIGHTNESS_MAX) * 100),
+                         publisher_id=self._publisher_id)
+            if self._reset_publisher:
+                self._publisher_id = None
+                self._reset_publisher = False

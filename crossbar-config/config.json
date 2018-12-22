@@ -33,12 +33,26 @@
                     ]
                 }
             ],
+            "components": [
+                {
+                    "type": "class",
+                    "realm": "realm1",
+                    "classname": "sbs.component.BrightnessServerSession"
+                }
+            ],
             "transports": [
                 {
-                    "type": "websocket",
+                    "type": "universal",
                     "endpoint": {
                         "type": "tcp",
                         "port": 5020
+                    },
+                    "rawsocket": {
+                    },
+                    "websocket": {
+                        "ws": {
+                            "type": "websocket"
+                        }
                     }
                 }
             ]
