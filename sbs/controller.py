@@ -32,6 +32,11 @@ def validate_and_sanitize_brightness_value(value):
     return value
 
 
+def percent_to_internal(percent):
+    validated = validate_and_sanitize_brightness_value(percent)
+    return int((validated / 100) * BRIGHTNESS_MAX)
+
+
 class BrightnessControl:
     def __init__(self):
         super().__init__()
@@ -54,11 +59,10 @@ class BrightnessControl:
         return int((self.brightness_current / BRIGHTNESS_MAX) * 100)
 
     def set_brightness(self, percent):
-        percent = validate_and_sanitize_brightness_value(percent)
+        brightness_requested = percent_to_internal(percent)
         # Abort any in progress change
         self.change_in_progress = False
 
-        brightness_requested = (percent / 100) * BRIGHTNESS_MAX
         brightness = self.brightness_current
 
         self.change_in_progress = True
@@ -84,4 +88,9 @@ class BrightnessControl:
             if self.change_in_progress:
                 brightness -= int(decimal_steps * BRIGHTNESS_STEP)
                 self.write_brightness_value(brightness)
+
+        # Ensure brightness is correct at the end
+        if brightness != brightness_requested:
+            self.write_brightness_value(brightness_requested)
+
         self.change_in_progress = False

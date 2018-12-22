@@ -22,7 +22,7 @@ from twisted.python import filepath
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet import threads
 
-from sbs.controller import BrightnessControl
+from sbs.controller import BrightnessControl, percent_to_internal
 from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
 
@@ -31,8 +31,11 @@ class BrightnessServerSession(wamp.ApplicationSession):
         super().__init__(config)
         self.controller = BrightnessControl()
         self.notifier = inotify.INotify()
+
         self._publisher_id = None
+        self._requested_value_internal = -1
         self._reset_publisher = False
+        self._last_value = -1
 
     def onConnect(self):
         self.log.info('transport connected')
@@ -54,19 +57,32 @@ class BrightnessServerSession(wamp.ApplicationSession):
 
     @inlineCallbacks
     def set_brightness(self, percentage, publisher_id=None):
-        def actually_set_brightness(percent):
-            self._publisher_id = publisher_id
+        def actually_set_brightness(percent, pub_id):
+            self._publisher_id = pub_id
+            self._requested_value_internal = percent_to_internal(percent)
             self.controller.set_brightness(percent)
-            self._reset_publisher = True
 
-        res = yield threads.deferToThread(actually_set_brightness, percentage)
+        res = yield threads.deferToThread(actually_set_brightness, percentage, publisher_id)
         returnValue(res)
 
     def publish_brightness_changed(self, _ignored, file_path, _mask):
         with open(file_path.path) as file:
+            current_value = int(file.read().strip())
+
+            # Inotify sometimes notifies duplicate events, we only
+            # want to publish a "brightness_changed" when its unique from
+            # last "edit".
+            if current_value == self._last_value:
+                return
+
             self.publish("io.crossbar.brightness_changed",
-                         percentage=int((int(file.read().strip()) / BRIGHTNESS_MAX) * 100),
+                         percentage=int((current_value / BRIGHTNESS_MAX) * 100),
                          publisher_id=self._publisher_id)
-            if self._reset_publisher:
+
+            # Reset the "publisher" once brightness is set to the requested
+            # level so that any internal change (bright changes using keyboard buttons)
+            # doesn't do a publish with false "publisher".
+            if current_value == self._requested_value_internal:
                 self._publisher_id = None
-                self._reset_publisher = False
+
+            self._last_value = current_value
