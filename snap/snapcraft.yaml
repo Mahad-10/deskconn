@@ -22,6 +22,8 @@ parts:
     source: .
     prime:
       - start-crossbar
+      - stop-crossbar
+      - entry_point_helpers.py
       - crossbar-config
       - sbs
   autobahn:
@@ -33,7 +35,7 @@ apps:
   server:
     command: start-crossbar
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     environment:
       PYTHONPATH: "$SNAP/crossbar:$SNAP/lib/python3.5/site-packages"
 

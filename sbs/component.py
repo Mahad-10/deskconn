@@ -37,10 +37,6 @@ class BrightnessServerSession(wamp.ApplicationSession):
         self._reset_publisher = False
         self._last_value = -1
 
-    def onConnect(self):
-        self.log.info('transport connected')
-        self.join(self.config.realm)
-
     @inlineCallbacks
     def onJoin(self, details):
         self.log.info('session joined: {}'.format(details))
@@ -70,8 +66,8 @@ class BrightnessServerSession(wamp.ApplicationSession):
             current_value = int(file.read().strip())
 
             # Inotify sometimes notifies duplicate events, we only
-            # want to publish a "brightness_changed" when its unique from
-            # last "edit".
+            # want to publish a "brightness_changed" when its unique
+            # since last "change".
             if current_value == self._last_value:
                 return
 

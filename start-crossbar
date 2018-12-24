@@ -23,8 +23,9 @@ import socket
 import threading
 import time
 
-from crossbar import run
 from zeroconf import ServiceInfo, Zeroconf
+
+import entry_point_helpers as helpers
 
 
 def get_local_address():
@@ -86,24 +87,35 @@ class ServiceDiscovery:
         self.wait_time = seconds
 
 
-def is_snap():
-    return 'screen-brightness-server' in os.environ.get('SNAP', '')
+def wait_for_crossbar_interface_connection():
+    while True:
+        if os.path.exists(os.path.join(os.environ.get('SNAP_DATA'), 'crossbar.running')):
+            break
+        print("crossbar interface not connected")
+        time.sleep(1)
+    print("crossbar interface connected")
+
+
+def get_crossbar_discovery(root_dir):
+    discovery = ServiceDiscovery()
+    discovery.set_wait_file(os.path.join(root_dir, 'node.pid'))
+    discovery.set_wait_time(10)
+    return discovery
 
 
 def main():
     params = ['start']
-    if is_snap():
+    if helpers.is_snap():
         params.append('--config')
         params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
-        cbdir = os.environ.get('SNAP_USER_DATA')
-    else:
-        cbdir = 'crossbar-config'
+        wait_for_crossbar_interface_connection()
 
+    from crossbar import run
     params.append('--cbdir')
+    cbdir = helpers.get_cbdir()
     params.append(cbdir)
-    discovery = ServiceDiscovery()
-    discovery.set_wait_file(os.path.join(cbdir, 'node.pid'))
-    discovery.set_wait_time(10)
+
+    discovery = get_crossbar_discovery(cbdir)
     try:
         discovery.start_publishing()
         run(params)
