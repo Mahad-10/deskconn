@@ -50,7 +50,10 @@ class ServiceDiscovery:
         print("Unregistering service: {}".format(self.info.name))
         self.zeroconf.unregister_service(self.info)
         print("Unregistered service: {}".format(self.info.name))
+
+        print("Cleaning up zeroconf")
         self.zeroconf.close()
+        print("Cleaned up zeroconf")
 
 
 class Main:
@@ -59,7 +62,7 @@ class Main:
         self.discovery = ServiceDiscovery()
 
     def _start_publishing_service_delayed(self):
-        reactor.callLater(5.0, self.discovery.start_publishing)
+        reactor.callLater(3.0, self.discovery.start_publishing)
 
     def start(self):
         reactor.addSystemEventTrigger('after', 'startup', self._start_publishing_service_delayed)

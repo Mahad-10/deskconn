@@ -41,7 +41,11 @@ class BrightnessServerSession(wamp.ApplicationSession):
     def onJoin(self, details):
         self.log.info('session joined: {}'.format(details))
         self.notifier.startReading()
-        self.notifier.watch(filepath.FilePath(BRIGHTNESS_CONFIG_FILE), callbacks=[self.publish_brightness_changed])
+        self.notifier.watch(
+            filepath.FilePath(BRIGHTNESS_CONFIG_FILE),
+            mask=inotify.IN_CHANGED,
+            callbacks=[self.publish_brightness_changed]
+        )
 
         yield self.register(self.set_brightness, 'io.crossbar.set_brightness')
         yield self.register(self.controller.get_current_brightness_percentage, 'io.crossbar.get_brightness')
