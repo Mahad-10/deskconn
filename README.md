@@ -7,12 +7,12 @@ The simplest way is to install from snap store.
 $ sudo snap install screen-brightness-server --edge --devmode
 ```
 
-If you are more of a "traditional" dev:
-Clone the project to a location of your preference, install Flask
+If you don't want to use the snap package:
+Clone the project, install requirements with pip
 and create a systemd job to run automatically on boot.
 
-To install Flask do:
-`$ pip3 install Flask`
+To install requirements, do:
+`$ pip3 install -r requirements.txt`
 
 To create a systemd job, run below command and paste the configuration below into it.
 
@@ -29,7 +29,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=directory_where_you_cloned
-ExecStart=/usr/bin/python3 -u main.py
+ExecStart=./start-crossbar
 
 [Install]
 WantedBy=multi-user.target

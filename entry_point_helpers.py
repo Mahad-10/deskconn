@@ -10,16 +10,8 @@ def get_cbdir():
     return os.environ.get('SNAP_USER_DATA') if is_snap() else 'crossbar-config'
 
 
-def stop_crossbar(main):
-    params = ['stop', '--cbdir']
-    cbdir = get_cbdir()
-
-    if os.path.exists(os.path.join(cbdir, 'node.pid')):
-        params.append(cbdir)
-        main(params)
-
-
 def get_local_address():
+    # FIXME: depends on the internet, hence breaks the "edge" usecase.
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("www.google.com", 80))
     res = s.getsockname()[0]
