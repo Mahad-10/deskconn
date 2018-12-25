@@ -18,22 +18,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import os
 import socket
-import threading
-import time
 
+from crossbar import run
+from twisted.internet import reactor
 from zeroconf import ServiceInfo, Zeroconf
 
 import entry_point_helpers as helpers
-
-
-def get_local_address():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("www.google.com", 80))
-    res = s.getsockname()[0]
-    s.close()
-    return res
 
 
 class ServiceDiscovery:
@@ -43,36 +34,17 @@ class ServiceDiscovery:
         self.info = ServiceInfo(
             type_="{}.local.".format(type_),
             name="{}.{}.local.".format(name, type_),
-            address=socket.inet_aton(get_local_address() if address == '0.0.0.0' else address),
+            address=socket.inet_aton(helpers.get_local_address() if address == '0.0.0.0' else address),
             port=port,
             properties={}
         )
 
         self.zeroconf = Zeroconf()
-        self.wait_path = None
-        self.wait_time = 20
 
-    def _actually_publish(self):
+    def start_publishing(self):
         print("Registering service: {}".format(self.info.name))
         self.zeroconf.register_service(self.info)
         print("Registered service: {}".format(self.info.name))
-
-    def ensure_wait_path(self):
-        for i in range(self.wait_time):
-            if os.path.exists(self.wait_path):
-                break
-
-            if i == self.wait_time - 1:
-                raise ValueError("Waited {} seconds but did not find file at {}".format(
-                    self.wait_time, self.wait_path))
-            time.sleep(1)
-        self._actually_publish()
-
-    def start_publishing(self):
-        if self.wait_path:
-            threading.Thread(target=self.ensure_wait_path).start()
-        else:
-            self._actually_publish()
 
     def stop_publishing(self):
         print("Unregistering service: {}".format(self.info.name))
@@ -80,48 +52,20 @@ class ServiceDiscovery:
         print("Unregistered service: {}".format(self.info.name))
         self.zeroconf.close()
 
-    def set_wait_file(self, path):
-        self.wait_path = path
 
-    def set_wait_time(self, seconds):
-        self.wait_time = seconds
+class Main:
+    def __init__(self):
+        super().__init__()
+        self.discovery = ServiceDiscovery()
 
+    def _start_publishing_service_delayed(self):
+        reactor.callLater(5.0, self.discovery.start_publishing)
 
-def wait_for_crossbar_interface_connection():
-    while True:
-        if os.path.exists(os.path.join(os.environ.get('SNAP_DATA'), 'crossbar.running')):
-            break
-        print("crossbar interface not connected")
-        time.sleep(1)
-    print("crossbar interface connected")
-
-
-def get_crossbar_discovery(root_dir):
-    discovery = ServiceDiscovery()
-    discovery.set_wait_file(os.path.join(root_dir, 'node.pid'))
-    discovery.set_wait_time(10)
-    return discovery
-
-
-def main():
-    params = ['start']
-    if helpers.is_snap():
-        params.append('--config')
-        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
-        wait_for_crossbar_interface_connection()
-
-    from crossbar import run
-    params.append('--cbdir')
-    cbdir = helpers.get_cbdir()
-    params.append(cbdir)
-
-    discovery = get_crossbar_discovery(cbdir)
-    try:
-        discovery.start_publishing()
-        run(params)
-    finally:
-        discovery.stop_publishing()
+    def start(self):
+        reactor.addSystemEventTrigger('after', 'startup', self._start_publishing_service_delayed)
+        reactor.addSystemEventTrigger('after', 'shutdown', self.discovery.stop_publishing)
+        run(helpers.get_start_params())
 
 
 if __name__ == '__main__':
-    main()
+    Main().start()

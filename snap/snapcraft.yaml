@@ -22,14 +22,12 @@ parts:
     source: .
     prime:
       - start-crossbar
-      - stop-crossbar
       - entry_point_helpers.py
       - crossbar-config
       - sbs
   autobahn:
     plugin: python
-    python-packages:
-      - zeroconf
+    requirements: requirements.txt
 
 apps:
   server:
@@ -37,11 +35,4 @@ apps:
     daemon: simple
     restart-condition: never
     environment:
-      PYTHONPATH: "$SNAP/crossbar:$SNAP/lib/python3.5/site-packages"
-
-plugs:
-  crossbar:
-    interface: content
-    content: executables
-    default-provider: crossbar:crossbar
-    target: $SNAP/crossbar
+      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
