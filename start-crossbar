@@ -18,10 +18,26 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+import os
+
 from crossbar import run
 
-import entry_point_helpers as helpers
+
+def _is_snap():
+    return 'screen-brightness-server' in os.environ.get('SNAP', '')
+
+
+def _get_cbdir():
+    return os.environ.get('SNAP_USER_DATA') if _is_snap() else 'crossbar-config'
+
+
+def get_start_params():
+    params = ['start', '--cbdir', _get_cbdir()]
+    if _is_snap():
+        params.append('--config')
+        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
+    return params
 
 
 if __name__ == '__main__':
-    run(helpers.get_start_params())
+    run(get_start_params())

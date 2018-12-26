@@ -22,7 +22,6 @@ parts:
     source: .
     prime:
       - start-crossbar
-      - entry_point_helpers.py
       - crossbar-config
       - sbs
   autobahn:
