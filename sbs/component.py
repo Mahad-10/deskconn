@@ -22,7 +22,7 @@ from twisted.python import filepath
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet import threads
 
-from sbs.controller import BrightnessControl, percent_to_internal, Mouse
+from sbs.controller import BrightnessControl, percent_to_internal, Mouse, ServiceDiscovery
 from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
 
@@ -100,4 +100,21 @@ class MouseServerSession(wamp.ApplicationSession):
 
     def onLeave(self, details):
         self.log.info('session left: {}'.format(details))
+        self.disconnect()
+
+
+class ServiceDiscoverySession(wamp.ApplicationSession):
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.discovery = ServiceDiscovery()
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        self.log.info('session joined: {}'.format(details))
+        res = yield threads.deferToThread(self.discovery.start_publishing)
+        returnValue(res)
+
+    def onLeave(self, details):
+        self.log.info('session left: {}'.format(details))
+        self.discovery.stop_publishing()
         self.disconnect()

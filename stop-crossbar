@@ -27,7 +27,7 @@ import entry_point_helpers as helpers
 
 def main():
     params = ['stop', '--cbdir']
-    cbdir = helpers.get_cbdir()
+    cbdir = helpers._get_cbdir()
     if os.path.exists(os.path.join(cbdir, 'node.pid')):
         params.append(cbdir)
         run(params)

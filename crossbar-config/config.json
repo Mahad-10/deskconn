@@ -43,6 +43,11 @@
                     "type": "class",
                     "realm": "realm1",
                     "classname": "sbs.component.MouseServerSession"
+                },
+                                {
+                    "type": "class",
+                    "realm": "realm1",
+                    "classname": "sbs.component.ServiceDiscoverySession"
                 }
             ],
             "transports": [
