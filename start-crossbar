@@ -39,5 +39,9 @@ def get_start_params():
     return params
 
 
-if __name__ == '__main__':
+def main():
     run(get_start_params())
+
+
+if __name__ == '__main__':
+    main()

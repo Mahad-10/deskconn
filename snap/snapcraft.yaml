@@ -23,9 +23,9 @@ parts:
     prime:
       - start-crossbar
       - crossbar-config
-      - sbs
   autobahn:
     plugin: python
+    source: .
     requirements: requirements.txt
 
 apps:
