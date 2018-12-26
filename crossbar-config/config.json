@@ -38,6 +38,11 @@
                     "type": "class",
                     "realm": "realm1",
                     "classname": "sbs.component.BrightnessServerSession"
+                },
+                {
+                    "type": "class",
+                    "realm": "realm1",
+                    "classname": "sbs.component.MouseServerSession"
                 }
             ],
             "transports": [

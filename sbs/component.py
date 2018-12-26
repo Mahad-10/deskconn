@@ -22,7 +22,7 @@ from twisted.python import filepath
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet import threads
 
-from sbs.controller import BrightnessControl, percent_to_internal
+from sbs.controller import BrightnessControl, percent_to_internal, Mouse
 from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX
 
 
@@ -86,3 +86,18 @@ class BrightnessServerSession(wamp.ApplicationSession):
                 self._publisher_id = None
 
             self._last_value = current_value
+
+
+class MouseServerSession(wamp.ApplicationSession):
+    def __init__(self, config=None):
+        super().__init__(config)
+        self.mouse = Mouse()
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        self.log.info('session joined: {}'.format(details))
+        yield self.register(self.mouse.move, 'io.crossbar.move_mouse')
+
+    def onLeave(self, details):
+        self.log.info('session left: {}'.format(details))
+        self.disconnect()
