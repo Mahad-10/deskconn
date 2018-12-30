@@ -4,3 +4,4 @@ twisted
 txaio
 zeroconf
 xlib
+dbus-python

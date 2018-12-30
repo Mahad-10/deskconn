@@ -17,14 +17,16 @@
 #
 
 import math
+import os
 import socket
 import time
 
+import dbus
 from Xlib import display, X
 from Xlib.ext.xtest import fake_input
 from zeroconf import ServiceInfo, Zeroconf
 
-from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_STEP, BRIGHTNESS_MAX
+from sbs.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_STEP, BRIGHTNESS_MAX, DBUS_DATA
 
 _PRESSED_KEYS = []
 _PRESSED_MOUSE_BUTTONS = []
@@ -154,6 +156,25 @@ def get_local_address():
     res = s.getsockname()[0]
     s.close()
     return res
+
+
+class Display:
+    def __init__(self):
+        self.environment = os.environ.get('XDG_CURRENT_DESKTOP', 'KDE').lower()
+        if self.environment not in DBUS_DATA.keys():
+            raise RuntimeError('Supported environments: {}'.format(', '.join(DBUS_DATA.keys())))
+        bus = dbus.SessionBus()
+        self.screen_saver = bus.get_object(DBUS_DATA[self.environment]['service_name'],
+                                           DBUS_DATA[self.environment]['path'])
+        self.iface = dbus.Interface(self.screen_saver, DBUS_DATA[self.environment]['interface'])
+
+    def is_locked(self):
+        return getattr(self.iface, DBUS_DATA[self.environment]['methods']['is_locked'])()
+
+    def lock(self):
+        if not self.is_locked():
+            getattr(self.iface, DBUS_DATA[self.environment]['methods']['lock'])()
+        return self.is_locked()
 
 
 class ServiceDiscovery:
