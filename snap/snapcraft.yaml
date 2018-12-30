@@ -35,3 +35,5 @@ apps:
     restart-condition: never
     environment:
       PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
+      DISPLAY: ":0"
+      XAUTHORITY: "/root/.Xauthority"
