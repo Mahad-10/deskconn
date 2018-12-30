@@ -163,7 +163,10 @@ class Display:
         self.environment = os.environ.get('XDG_CURRENT_DESKTOP', 'KDE').lower()
         if self.environment not in DBUS_DATA.keys():
             raise RuntimeError('Supported environments: {}'.format(', '.join(DBUS_DATA.keys())))
+        os.environ.update({"DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus"})
+        os.seteuid(1000)
         bus = dbus.SessionBus()
+        os.seteuid(0)
         self.screen_saver = bus.get_object(DBUS_DATA[self.environment]['service_name'],
                                            DBUS_DATA[self.environment]['path'])
         self.iface = dbus.Interface(self.screen_saver, DBUS_DATA[self.environment]['interface'])
