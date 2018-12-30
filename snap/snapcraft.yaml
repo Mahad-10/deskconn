@@ -27,6 +27,10 @@ parts:
     plugin: python
     source: .
     requirements: requirements.txt
+    build-packages:
+      - pkg-config
+      - libdbus-1-dev
+      - libdbus-glib-1-dev
 
 apps:
   server:
