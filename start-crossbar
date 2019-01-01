@@ -24,7 +24,7 @@ from crossbar import run
 
 
 def _is_snap():
-    return 'screen-brightness-server' in os.environ.get('SNAP', '')
+    return os.environ.get('SNAP_NAME') == 'deskconn'
 
 
 def _get_cbdir():
@@ -40,6 +40,11 @@ def get_start_params():
 
 
 def main():
+    if _is_snap():
+        # If running as root
+        if os.getuid() == 0:
+            os.environ.update({'DISPLAY': ':0', 'XAUTHORITY': '/root/.Xauthority'})
+
     run(get_start_params())
 
 

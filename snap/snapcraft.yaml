@@ -1,10 +1,8 @@
-name: screen-brightness-server
-version: '0.3'
-summary: Expose screen brightness control to local http server
+name: deskconn
+version: '0.5'
+summary: Expose your desktop functionalities over network
 description: |
-  Expose screen brightness control to local http server
-
-  Currently only supports machines with Intel GPU.
+  Expose your desktop functionalities over network
 
 grade: stable
 confinement: devmode
@@ -33,11 +31,9 @@ parts:
       - libdbus-glib-1-dev
 
 apps:
-  server:
+  deskconn:
     command: start-crossbar
     daemon: simple
     restart-condition: never
     environment:
       PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
-      DISPLAY: ":0"
-      XAUTHORITY: "/root/.Xauthority"
