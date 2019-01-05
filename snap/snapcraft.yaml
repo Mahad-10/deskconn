@@ -32,8 +32,6 @@ parts:
 
 apps:
   deskconn:
-    command: start-crossbar
+    command: python3 -u $SNAP/start-crossbar
     daemon: simple
     restart-condition: never
-    environment:
-      PYTHONPATH: "$SNAP/lib/python3.5/site-packages:$PYTHONPATH"
