@@ -16,7 +16,7 @@ def get_local_address():
 
 
 class ServiceDiscovery:
-    def __init__(self, type_='_crossbar._tcp', name='Screen brightness server', address='0.0.0.0', port=5020):
+    def __init__(self, type_='_crossbar._tcp', name='Deskconn server', address='0.0.0.0', port=5020):
         super().__init__()
 
         self.type_ = type_
@@ -39,6 +39,7 @@ class ServiceDiscovery:
         print("Unregistering service: {}".format(self.type_))
         self.zeroconf.unregister_service(self.info)
         print("Unregistered service: {}".format(self.type_))
+        self.zeroconf.close()
 
 
 class ServiceDiscoveryComponent(wamp.ApplicationSession):
