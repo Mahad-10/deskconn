@@ -25,6 +25,7 @@ parts:
     prime:
       - start-crossbar.py
       - session.py
+      - config.sh
       - crossbar-config
   deskconn:
     plugin: python
@@ -62,3 +63,5 @@ apps:
       - x11
       - unity7
       - desktop
+  config:
+    command: config.sh
