@@ -45,7 +45,7 @@ parts:
 
 apps:
   deskconn:
-    command: python3 -u $SNAP/start-crossbar.py
+    command: start-crossbar.py
     daemon: simple
     restart-condition: never
     plugs:
