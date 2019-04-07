@@ -25,7 +25,7 @@ class ServiceDiscovery:
             name="{}.{}.local.".format(name, type_),
             address=socket.inet_aton(get_local_address() if address == '0.0.0.0' else address),
             port=port,
-            properties={}
+            properties={"realm": "deskconn", "hostname": socket.gethostname()}
         )
 
         self.zeroconf = Zeroconf()
