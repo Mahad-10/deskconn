@@ -1,11 +1,12 @@
 name: deskconn
-version: '0.5'
+version: '0.9'
 summary: Expose your desktop functionalities over network
 description: |
   Expose your desktop functionalities over network
 
 grade: stable
-confinement: devmode
+confinement: strict
+base: core18
 
 architectures:
   - build-on: amd64
@@ -14,24 +15,50 @@ architectures:
   - build-on: i386
     run-on: i386
 
+  - build-on: armhf
+    run-on: armhf
+
 parts:
-  server:
+  launchers:
     plugin: dump
     source: .
     prime:
-      - start-crossbar
+      - start-crossbar.py
+      - session.py
       - crossbar-config
-  autobahn:
+  deskconn:
     plugin: python
     source: .
-    requirements: requirements.txt
+    requirements:
+      - requirements.txt
+    stage-packages:
+      - libsnappy1v5
     build-packages:
       - pkg-config
       - libdbus-1-dev
       - libdbus-glib-1-dev
+      - gcc
+      - libffi-dev
+      - libssl-dev
+      - make
+      - libbz2-dev
+      - libsnappy-dev
+      - libunwind-dev
 
 apps:
   deskconn:
-    command: python3 -u $SNAP/start-crossbar
+    command: python3 -u $SNAP/start-crossbar.py
     daemon: simple
     restart-condition: never
+    plugs:
+      - network
+      - network-bind
+      - display-control
+  session:
+    command: session.py
+    plugs:
+      - network
+      - network-bind
+      - x11
+      - unity7
+      - desktop

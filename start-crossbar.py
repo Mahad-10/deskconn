@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (C) 2018  Omer Akram
 #
@@ -25,24 +26,19 @@ def _is_snap():
     return os.environ.get('SNAP_NAME') == 'deskconn'
 
 
-def _get_cbdir():
-    return os.environ.get('SNAP_USER_DATA') if _is_snap() else 'crossbar-config'
-
-
 def get_start_params():
-    params = ['start', '--cbdir', _get_cbdir()]
+    params = ['start', '--cbdir']
     if _is_snap():
+        params.append(os.environ.get('SNAP_USER_DATA'))
         params.append('--config')
-        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.json'))
+        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.yaml'))
+    else:
+        params.append('crossbar-config')
+        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
     return params
 
 
 def main():
-    if _is_snap():
-        # If running as root
-        if os.getuid() == 0:
-            os.environ.update({'DISPLAY': ':0', 'XAUTHORITY': '/root/.Xauthority'})
-
     run(get_start_params())
 
 

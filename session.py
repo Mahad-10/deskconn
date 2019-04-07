@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright (C) 2018  Omer Akram
 #
@@ -15,3 +16,17 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
+
+from autobahn.twisted.wamp import ApplicationRunner
+
+from deskconn import MouseServerComponent, ScreenLockComponent
+
+
+def main():
+    runner = ApplicationRunner("ws://127.0.0.1:5020/ws", "deskconn")
+    runner.run(MouseServerComponent, start_reactor=False)
+    runner.run(ScreenLockComponent)
+
+
+if __name__ == '__main__':
+    main()
