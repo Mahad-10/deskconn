@@ -21,7 +21,6 @@ WantedBy=default.target
 
 Then run below commands to enable that service
 
-systemctl --user enable deskconn.session
-systemctl --user start deskconn.session
+systemctl --user enable deskconn.service
+systemctl --user start deskconn.service
 "
-

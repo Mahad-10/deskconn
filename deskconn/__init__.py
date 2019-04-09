@@ -15,16 +15,3 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-
-from deskconn.components.brightness import ScreenBrightnessComponent
-from deskconn.components.cursor import MouseServerComponent
-from deskconn.components.discovery import ServiceDiscoveryComponent
-from deskconn.components.lock_screen import ScreenLockComponent
-
-
-__all__ = (
-    ScreenBrightnessComponent,
-    MouseServerComponent,
-    ServiceDiscoveryComponent,
-    ScreenLockComponent
-)

@@ -19,7 +19,8 @@
 
 from autobahn.twisted.wamp import ApplicationRunner
 
-from deskconn import MouseServerComponent, ScreenLockComponent
+from deskconn.components.lock_screen import ScreenLockComponent
+from deskconn.components.cursor import MouseServerComponent
 
 
 def main():
