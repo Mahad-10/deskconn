@@ -24,8 +24,11 @@ BRIGHTNESS_MAX_REFERENCE_FILE = os.path.join(DRIVER_ROOT, 'max_brightness')
 BRIGHTNESS_STEP = 25
 BRIGHTNESS_MIN = 1
 if os.path.exists(BRIGHTNESS_MAX_REFERENCE_FILE):
-    with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
-        BRIGHTNESS_MAX = int(file.read().strip())
+    try:
+        with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
+            BRIGHTNESS_MAX = int(file.read().strip())
+    except PermissionError:
+        BRIGHTNESS_MAX = -1
 else:
     BRIGHTNESS_MAX = -1
 
