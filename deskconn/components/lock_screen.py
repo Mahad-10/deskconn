@@ -4,7 +4,39 @@ import dbus
 from autobahn.twisted import wamp
 from twisted.internet.defer import inlineCallbacks
 
-from deskconn.constants import DBUS_DATA
+
+DBUS_DATA = {
+    'kde': {
+        'service_name': 'org.kde.screensaver',
+        'path': '/ScreenSaver',
+        'interface': 'org.freedesktop.ScreenSaver',
+        'methods': {
+            'is_locked': 'GetActive',
+            'lock': 'Lock'
+        }
+    },
+    'unity': {
+        'service_name': 'org.gnome.ScreenSaver',
+        'path': '/com/canonical/Unity/Session',
+        'interface': 'com.canonical.Unity.Session',
+        'methods': {
+            'is_locked': 'IsLocked',
+            'lock': 'Lock'
+        }
+    },
+    'gnome': {
+        'service_name': 'org.gnome.ScreenSaver',
+        'path': '/org/gnome/ScreenSaver',
+        'interface': 'org.gnome.ScreenSaver',
+        'methods': {
+            'is_locked': 'GetActive',
+            'lock': 'Lock'
+        }
+    }
+}
+
+DBUS_DATA.update({'ubuntu:gnome': DBUS_DATA['gnome']})
+DBUS_DATA.update({'ubuntu:unity': DBUS_DATA['unity']})
 
 
 class Display:

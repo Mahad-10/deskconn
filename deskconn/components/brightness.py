@@ -17,6 +17,7 @@
 #
 
 import math
+import os
 import time
 
 from autobahn.twisted import wamp
@@ -25,28 +26,36 @@ from twisted.python import filepath
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet import threads
 
-from deskconn.constants import BRIGHTNESS_CONFIG_FILE, BRIGHTNESS_MAX, BRIGHTNESS_STEP
+DRIVER_ROOT = '/sys/class/backlight/intel_backlight/'
+BRIGHTNESS_CONFIG_FILE = os.path.join(DRIVER_ROOT, 'brightness')
+BRIGHTNESS_MAX_REFERENCE_FILE = os.path.join(DRIVER_ROOT, 'max_brightness')
+BRIGHTNESS_STEP = 25
+BRIGHTNESS_MIN = 1
 
 
-def validate_and_sanitize_brightness_value(value):
-    assert (isinstance(value, int) or isinstance(value, float)), 'brightness must be either int or float'
-
-    if value < 1:
-        return 1
-    if value > 100:
-        return 100
-    return value
-
-
-def percent_to_internal(percent):
-    validated = validate_and_sanitize_brightness_value(percent)
-    return int((validated / 100) * BRIGHTNESS_MAX)
-
-
-class BrightnessControl:
+class _BrightnessControl:
     def __init__(self):
         super().__init__()
+        with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
+            self._brightness_max = int(file.read().strip())
         self.change_in_progress = False
+
+    @property
+    def max_brightness(self):
+        return self._brightness_max
+
+    def validate_and_sanitize_brightness_value(self, value):
+        assert (isinstance(value, int) or isinstance(value, float)), 'brightness must be either int or float'
+
+        if value < 1:
+            return 1
+        if value > 100:
+            return 100
+        return value
+
+    def percent_to_internal(self, percent):
+        validated = self.validate_and_sanitize_brightness_value(percent)
+        return int((validated / 100) * self.max_brightness)
 
     @property
     def brightness_current(self):
@@ -60,12 +69,12 @@ class BrightnessControl:
     def get_current_brightness_percentage(self, current_brightness_raw=0):
         # Calculate brightness percentage from provided "raw" value
         if current_brightness_raw > 0:
-            return int((current_brightness_raw / BRIGHTNESS_MAX) * 100)
+            return int((current_brightness_raw / self.max_brightness) * 100)
         # Seems we need to read from the backend
-        return int((self.brightness_current / BRIGHTNESS_MAX) * 100)
+        return int((self.brightness_current / self.max_brightness) * 100)
 
     def set_brightness(self, percent):
-        brightness_requested = percent_to_internal(percent)
+        brightness_requested = self.percent_to_internal(percent)
         # Abort any in progress change
         self.change_in_progress = False
 
@@ -105,7 +114,7 @@ class BrightnessControl:
 class ScreenBrightnessComponent(wamp.ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
-        self.controller = BrightnessControl()
+        self.controller = _BrightnessControl()
         self.notifier = inotify.INotify()
 
         self._publisher_id = None
@@ -135,7 +144,7 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
     def set_brightness(self, percentage, publisher_id=None):
         def actually_set_brightness(percent, pub_id):
             self._publisher_id = pub_id
-            self._requested_value_internal = percent_to_internal(percent)
+            self._requested_value_internal = self.controller.percent_to_internal(percent)
             self.controller.set_brightness(percent)
 
         res = yield threads.deferToThread(actually_set_brightness, percentage, publisher_id)
@@ -152,7 +161,7 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
                 return
 
             self.publish("org.deskconn.brightness.on_changed",
-                         percentage=int((current_value / BRIGHTNESS_MAX) * 100),
+                         percentage=int((current_value / self.controller.max_brightness) * 100),
                          publisher_id=self._publisher_id)
 
             # Reset the "publisher" once brightness is set to the requested
