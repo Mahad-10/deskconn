@@ -15,6 +15,9 @@ architectures:
   - build-on: i386
     run-on: i386
 
+  - build-on: armhf
+    run-on: armhf
+
 parts:
   launchers:
     plugin: dump
@@ -62,3 +65,10 @@ apps:
       - desktop
   config:
     command: config.sh
+
+slots:
+  deskconn-sock-dir:
+    interface: content
+    content: socket-directory
+    write:
+      - $SNAP_COMMON
