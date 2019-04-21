@@ -20,7 +20,7 @@ parts:
     plugin: dump
     source: .
     prime:
-      - start-crossbar.py
+      - server.py
       - session.py
       - config.sh
       - crossbar-config
@@ -45,7 +45,7 @@ parts:
 
 apps:
   deskconn:
-    command: start-crossbar.py
+    command: server.py
     daemon: simple
     restart-condition: never
     plugs:
