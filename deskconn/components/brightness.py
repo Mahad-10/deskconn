@@ -40,6 +40,10 @@ class _BrightnessControl:
             self._brightness_max = int(file.read().strip())
         self.change_in_progress = False
 
+    @staticmethod
+    def has_backlight():
+        return os.path.exists(BRIGHTNESS_MAX_REFERENCE_FILE)
+
     @property
     def max_brightness(self):
         return self._brightness_max
@@ -114,6 +118,9 @@ class _BrightnessControl:
 class ScreenBrightnessComponent(wamp.ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
+        if not _BrightnessControl.has_backlight():
+            return
+
         self.controller = _BrightnessControl()
         self.notifier = inotify.INotify()
 
@@ -124,7 +131,9 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        self.log.info('session joined: {}'.format(details))
+        if not _BrightnessControl.has_backlight():
+            return
+
         self.notifier.startReading()
         self.notifier.watch(
             filepath.FilePath(BRIGHTNESS_CONFIG_FILE),
@@ -136,9 +145,10 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
         yield self.register(self.controller.get_current_brightness_percentage, 'org.deskconn.brightness.get')
 
     def onLeave(self, details):
-        self.log.info('session left: {}'.format(details))
+        if not _BrightnessControl.has_backlight():
+            return
+
         self.notifier.stopReading()
-        self.disconnect()
 
     @inlineCallbacks
     def set_brightness(self, percentage, publisher_id=None):
