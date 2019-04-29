@@ -34,6 +34,7 @@ parts:
       - requirements.txt
     stage-packages:
       - libsnappy1v5
+      - avahi-utils
     build-packages:
       - pkg-config
       - libdbus-1-dev
@@ -55,6 +56,7 @@ apps:
       - network
       - network-bind
       - display-control
+      - avahi-control
   session:
     command: session.py
     plugs:

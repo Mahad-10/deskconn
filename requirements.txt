@@ -2,6 +2,5 @@ autobahn[twisted,serialization]
 crossbar
 twisted
 txaio
-zeroconf
 xlib
 dbus-python
