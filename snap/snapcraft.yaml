@@ -49,7 +49,7 @@ parts:
 
 apps:
   deskconn:
-    command: server.py
+    command: python3 -u $SNAP/server.py
     daemon: simple
     restart-condition: never
     plugs:
@@ -58,7 +58,7 @@ apps:
       - display-control
       - avahi-control
   session:
-    command: session.py
+    command: python3 -u $SNAP/session.py
     plugs:
       - network
       - network-bind
@@ -74,3 +74,10 @@ slots:
     content: socket-directory
     write:
       - $SNAP_COMMON
+
+plugs:
+  services-content:
+    content: avahi-services
+    default-provider: avahi:services-content
+    interface: content
+    target: $SNAP_COMMON
