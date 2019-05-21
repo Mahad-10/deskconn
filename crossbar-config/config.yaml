@@ -23,9 +23,6 @@ workers:
   - type: class
     realm: deskconn
     classname: deskconn.components.brightness.ScreenBrightnessComponent
-  - type: class
-    realm: deskconn
-    classname: deskconn.components.discovery.ServiceDiscoveryComponent
   transports:
   - type: universal
     endpoint:
@@ -34,12 +31,12 @@ workers:
     websocket:
       ws:
         type: websocket
-    web:
-      paths:
-        call:
-          type: caller
-          realm: deskconn
-          role: anonymous
+#    web:
+#      paths:
+#        call:
+#          type: caller
+#          realm: deskconn
+#          role: anonymous
   - type: rawsocket
     endpoint:
       type: unix
