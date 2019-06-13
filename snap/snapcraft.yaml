@@ -56,6 +56,7 @@ apps:
       - network
       - network-bind
       - display-control
+      - avahi-control
   session:
     command: python3 -u $SNAP/session.py
     plugs:
