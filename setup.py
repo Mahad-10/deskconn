@@ -19,6 +19,4 @@ setup(
     description='Expose your desktop functionality over the network.',
     download_url='https://github.com/deskconn/deskconn-server/tarball/{}'.format(VERSION),
     keywords=['linux', 'ubuntu'],
-    install_requires=['autobahn[twisted,serialization]', 'crossbar', 'twisted', 'txaio', 'zeroconf', 'xlib',
-                      'dbus-python'],
 )
