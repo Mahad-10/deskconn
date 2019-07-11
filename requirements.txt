@@ -1,6 +1,7 @@
+crossbar
 autobahn[twisted,serialization]
--e git://github.com/crossbario/crossbar.git
 twisted
 txaio
 xlib
 dbus-python
+requests
