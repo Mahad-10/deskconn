@@ -14,25 +14,26 @@ class PairingComponent(ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
         self._pending_otps = []
-        self.key_file = os.path.join(os.environ.get("HOME"), "deskconn.keys")
+        self._key_file = os.path.join(os.environ.get("HOME"), "deskconn.keys")
         self._public_key = None
         self._private_key = None
-        self.generate_and_save_key_pair()
+        self._generate_and_save_key_pair()
 
-    def generate_and_save_key_pair(self):
-        if os.path.exists(self.key_file):
-            with open(self.key_file) as file:
+    def _generate_and_save_key_pair(self):
+        if os.path.exists(self._key_file):
+            with open(self._key_file) as file:
                 self._public_key, self._private_key = file.read().split("\n")
         else:
             sk = PrivateKey.generate()
             self._public_key = binascii.b2a_hex(sk.public_key.encode()).decode()
             self._private_key = binascii.b2a_hex(sk.encode()).decode()
-            with open(self.key_file, 'w') as file:
+            with open(self._key_file, 'w') as file:
                 file.write(self._public_key)
                 file.write("\n")
                 file.write(self._private_key)
 
     async def onJoin(self, details):
+        print(details)
         self.log.info('realm joined: {}'.format(details.realm))
         await self.register(self, prefix="org.deskconn.pairing.")
 
