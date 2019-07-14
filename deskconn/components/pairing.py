@@ -7,7 +7,30 @@ import tempfile
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn import wamp
 from nacl.public import PrivateKey
+from sqlitedict import SqliteDict
 from twisted.internet import reactor
+
+
+def add_key(key):
+    db_path = os.path.join(os.environ.get("HOME"), "deskconn.sqlite")
+    db = SqliteDict(db_path)
+    if 'keys' not in db.keys():
+        db['keys'] = [key]
+    else:
+        k = db['keys']
+        k.append(key)
+        db['keys'] = k
+    db.commit()
+    db.close()
+
+
+def has_key(key):
+    db_path = os.path.join(os.environ.get("HOME"), "deskconn.sqlite")
+    db = SqliteDict(db_path)
+    if 'keys' not in db.keys():
+        return False
+    keys = db.get('keys')
+    return key in keys
 
 
 class PairingComponent(ApplicationSession):
@@ -58,6 +81,6 @@ class PairingComponent(ApplicationSession):
         otp = int(otp.strip())
         if otp in self._pending_otps:
             self._pending_otps.remove(otp)
-            print("Saving public key...", public_key)
+            add_key(public_key)
             return self._public_key
         raise wamp.ApplicationError("org.deskconn.errors.invalid_otp")

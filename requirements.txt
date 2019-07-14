@@ -1,7 +1,6 @@
 crossbar
 autobahn[twisted,serialization]
 twisted
-txaio
 xlib
 dbus-python
-requests
+sqlitedict
