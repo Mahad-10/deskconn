@@ -6,31 +6,27 @@ import tempfile
 
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn import wamp
+from autobahn.wamp import ApplicationError
 from nacl.public import PrivateKey
 from sqlitedict import SqliteDict
 from twisted.internet import reactor
 
 
-def add_key(key):
+def add_key(key_authid, realm, role):
     db_path = os.path.join(os.environ.get("HOME"), "deskconn.sqlite")
     db = SqliteDict(db_path)
-    if 'keys' not in db.keys():
-        db['keys'] = [key]
-    else:
-        k = db['keys']
-        k.append(key)
-        db['keys'] = k
+    db[key_authid] = {'pubkey': key_authid, 'realm': realm, 'role': role}
     db.commit()
     db.close()
 
 
-def has_key(key):
+def get_principal(key):
     db_path = os.path.join(os.environ.get("HOME"), "deskconn.sqlite")
     db = SqliteDict(db_path)
-    if 'keys' not in db.keys():
-        return False
-    keys = db.get('keys')
-    return key in keys
+    for k, v in db.items():
+        if k == key:
+            return v
+    return {}
 
 
 class PairingComponent(ApplicationSession):
@@ -56,7 +52,6 @@ class PairingComponent(ApplicationSession):
                 file.write(self._private_key)
 
     async def onJoin(self, details):
-        print(details)
         self.log.info('realm joined: {}'.format(details.realm))
         await self.register(self, prefix="org.deskconn.pairing.")
 
@@ -81,6 +76,27 @@ class PairingComponent(ApplicationSession):
         otp = int(otp.strip())
         if otp in self._pending_otps:
             self._pending_otps.remove(otp)
-            add_key(public_key)
-            return self._public_key
+            add_key(public_key, 'deskconn', 'deskconn')
+            return True
         raise wamp.ApplicationError("org.deskconn.errors.invalid_otp")
+
+
+class AuthenticatorSession(ApplicationSession):
+    async def onJoin(self, details):
+        def authenticate(_realm, authid, auth_details):
+            assert ('authmethod' in auth_details)
+            assert (auth_details['authmethod'] == 'cryptosign')
+            self.log.info("authenticating session with public key = {pubkey}", pubkey=authid)
+            principal = get_principal(authid)
+            if principal:
+                return {
+                    'pubkey': authid,
+                    'realm': principal['realm'],
+                    'authid': authid,
+                    'role': principal['role'],
+                    'cache': True
+                }
+            else:
+                raise ApplicationError('org.deskconn.no_such_user', 'no principal with matching public')
+
+        await self.register(authenticate, 'org.deskconn.authenticate')

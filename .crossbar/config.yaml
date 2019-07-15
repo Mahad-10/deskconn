@@ -6,7 +6,20 @@ workers:
   realms:
   - name: deskconn
     roles:
-    - name: anonymous
+    - name: pairing
+      permissions:
+      - uri: 'org.deskconn.pairing.'
+        match: prefix
+        allow:
+          call: true
+          register: true
+          publish: false
+          subscribe: false
+        disclose:
+          caller: false
+          publisher: false
+        cache: false
+    - name: deskconn
       permissions:
       - uri: 'org.deskconn.'
         match: prefix
@@ -19,26 +32,25 @@ workers:
           caller: false
           publisher: false
         cache: true
-  - name: pairing
-    roles:
-    - name: anonymous
-      permissions:
-      - uri: 'org.deskconn.pairing.'
-        match: prefix
-        allow:
-          call: true
-          register: true
-        disclose:
-          caller: true
-          publisher: false
-        cache: true
-
   components:
   - type: class
-    realm: pairing
+    realm: deskconn
     classname: deskconn.components.pairing.PairingComponent
+    role: pairing
+  - type: class
+    realm: deskconn
+    classname: deskconn.components.pairing.AuthenticatorSession
+    role: deskconn
   transports:
   - type: websocket
     endpoint:
       type: tcp
       port: 5020
+    auth:
+      anonymous:
+        type: static
+        role: pairing
+      cryptosign:
+        type: dynamic
+        authenticator: org.deskconn.authenticate
+        authenticator-realm: deskconn
