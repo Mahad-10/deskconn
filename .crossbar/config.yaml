@@ -35,6 +35,10 @@ workers:
   components:
   - type: class
     realm: deskconn
+    classname: deskconn.components.discovery.ServiceDiscoveryComponent
+    role: deskconn
+  - type: class
+    realm: deskconn
     classname: deskconn.components.pairing.PairingComponent
     role: pairing
   - type: class

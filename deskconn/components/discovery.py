@@ -1,8 +1,5 @@
 import os
-import shlex
-import signal
-import subprocess
-import uuid
+from pathlib import Path
 
 from autobahn.twisted import wamp
 
@@ -24,28 +21,14 @@ SERVICE_DATA = """
 class ServiceDiscoveryComponent(wamp.ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
-        self.process = None
+        self.service_dir = '$SNAP_COMMON/etc/avahi/services'
+        self.service_file = os.path.join(os.path.expandvars(self.service_dir), 'deskconn.service')
 
-    @property
-    def command(self):
-        return "avahi-publish -s deskconn-{} _deskconn._tcp 5020 realm=deskconn".format(str(uuid.uuid4()))
-
-    @staticmethod
-    def is_ubuntu_core():
-        with open("/proc/cmdline") as f:
-            return 'snap_core' in f.read()
-
-    def onJoin(self, details):
-        self.log.info('session joined: {}'.format(details))
-        if self.is_ubuntu_core():
-            service_dir = '$SNAP_COMMON/etc/avahi/services'
-            service_file = os.path.join(os.path.expandvars(service_dir), 'deskconn.service')
-            if os.path.exists(service_dir) and not os.path.exists(service_file):
-                with open(service_file) as file:
-                    file.write(SERVICE_DATA)
-        else:
-            self.process = subprocess.Popen(shlex.split(self.command))
+    async def onJoin(self, details):
+        if os.path.exists(self.service_dir) and not os.path.exists(self.service_file):
+            with open(self.service_file) as file:
+                file.write(SERVICE_DATA)
 
     def onLeave(self, details):
-        if self.process:
-            self.process.send_signal(signal.SIGINT)
+        if os.path.exists(self.service_file):
+            Path(self.service_file).unlink()
