@@ -22,6 +22,12 @@ parts:
   launchers:
     plugin: dump
     source: .
+    stage:
+      - pair.py
+      - server.py
+      - session.py
+      - config.sh
+      - .crossbar
     prime:
       - pair.py
       - server.py
