@@ -27,14 +27,12 @@ def _is_snap():
 
 
 def get_start_params():
-    params = ['start', '--cbdir']
+    params = ['start']
     if _is_snap():
+        params.append('--cbdir')
         params.append(os.environ.get('SNAP_USER_DATA'))
         params.append('--config')
-        params.append(os.path.join(os.environ.get('SNAP'), 'crossbar-config/config.yaml'))
-    else:
-        params.append('crossbar-config')
-        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
+        params.append(os.path.join(os.environ.get('SNAP'), '.crossbar/config.yaml'))
     return params
 
 

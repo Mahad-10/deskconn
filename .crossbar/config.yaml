@@ -8,7 +8,7 @@ workers:
     roles:
     - name: anonymous
       permissions:
-      - uri: ''
+      - uri: 'org.deskconn.'
         match: prefix
         allow:
           call: true
@@ -19,25 +19,26 @@ workers:
           caller: false
           publisher: false
         cache: true
+  - name: pairing
+    roles:
+    - name: anonymous
+      permissions:
+      - uri: 'org.deskconn.pairing.'
+        match: prefix
+        allow:
+          call: true
+          register: true
+        disclose:
+          caller: true
+          publisher: false
+        cache: true
+
   components:
   - type: class
-    realm: deskconn
-    classname: deskconn.components.brightness.ScreenBrightnessComponent
+    realm: pairing
+    classname: deskconn.components.pairing.PairingComponent
   transports:
-  - type: universal
+  - type: websocket
     endpoint:
       type: tcp
       port: 5020
-    websocket:
-      ws:
-        type: websocket
-#    web:
-#      paths:
-#        call:
-#          type: caller
-#          realm: deskconn
-#          role: anonymous
-  - type: rawsocket
-    endpoint:
-      type: unix
-      path: $SNAP_COMMON/deskconn.sock

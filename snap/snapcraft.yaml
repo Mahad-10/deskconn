@@ -23,10 +23,11 @@ parts:
     plugin: dump
     source: .
     prime:
+      - pair.py
       - server.py
       - session.py
       - config.sh
-      - crossbar-config
+      - .crossbar
   deskconn:
     plugin: python
     source: .
@@ -67,6 +68,8 @@ apps:
       - desktop
   config:
     command: config.sh
+  pair:
+    command: python3 -u $SNAP/pair.py
 
 slots:
   deskconn-sock-dir:
