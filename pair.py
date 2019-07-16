@@ -4,8 +4,27 @@ import tempfile
 import uuid
 
 from autobahn.twisted.component import Component, run
+from twisted.internet.endpoints import UNIXClientEndpoint
+from twisted.internet import reactor
 
-comp = Component(transports="ws://localhost:5020/ws", realm="deskconn")
+
+def _is_snap():
+    return os.environ.get('SNAP_NAME') == 'deskconn'
+
+
+if not _is_snap():
+    os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
+
+transport = {
+    "type": "rawsocket",
+    "url": "ws://localhost/ws",
+    "endpoint": UNIXClientEndpoint(reactor,
+                                   os.path.join(os.path.expandvars('$SNAP_COMMON'),
+                                                'deskconn.sock')),
+    "serializer": "cbor",
+}
+
+comp = Component(transports=[transport], realm="deskconn")
 
 
 @comp.on_join

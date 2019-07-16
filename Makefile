@@ -8,3 +8,6 @@ server:
 
 session:
 	python3 -u session.py
+
+pair:
+	python3 -u pair.py
