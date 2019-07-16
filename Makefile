@@ -3,5 +3,8 @@
 deps:
 	pip install -r requirements.txt
 
-start:
+server:
 	python3 -u server.py
+
+session:
+	python3 -u session.py
