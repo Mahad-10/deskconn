@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-echo '<?xml version="1.0" standalone='no'?>
+echo '<?xml version="1.0" standalone="no"?>
 <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
 
 <service-group>
