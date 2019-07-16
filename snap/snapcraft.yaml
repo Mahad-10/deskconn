@@ -76,6 +76,9 @@ apps:
     command: config.sh
   pair:
     command: python3 -u $SNAP/pair.py
+    plugs:
+      - network
+      - network-bind
 
 slots:
   deskconn-sock-dir:
