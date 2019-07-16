@@ -61,7 +61,7 @@ workers:
   - type: rawsocket
     endpoint:
       type: unix
-      path: $HOME/deskconn.sock
+      path: $SNAP_COMMON/deskconn.sock
     auth:
       anonymous:
         type: static

@@ -33,6 +33,8 @@ def get_start_params():
         params.append(os.environ.get('SNAP_USER_DATA'))
         params.append('--config')
         params.append(os.path.join(os.environ.get('SNAP'), '.crossbar/config.yaml'))
+    else:
+        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
     return params
 
 

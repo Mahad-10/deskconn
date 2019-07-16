@@ -97,6 +97,7 @@ class AuthenticatorSession(ApplicationSession):
                     'cache': True
                 }
             else:
-                raise ApplicationError('org.deskconn.no_such_user', 'no principal with matching public')
+                raise ApplicationError('org.deskconn.no_such_user',
+                                       'no principal with matching public')
 
         await self.register(authenticate, 'org.deskconn.authenticate')
