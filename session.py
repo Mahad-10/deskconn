@@ -17,16 +17,29 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-from autobahn.twisted.wamp import ApplicationRunner
+import os
+
+from autobahn.twisted.component import Component, run
+from twisted.internet.endpoints import UNIXClientEndpoint
+from twisted.internet import reactor
 
 from deskconn.components.lock_screen import ScreenLockComponent
 from deskconn.components.cursor import MouseServerComponent
 
+transport = {
+    "type": "rawsocket",
+    "url": "ws://localhost/ws",
+    "endpoint": UNIXClientEndpoint(reactor, os.path.join(os.path.expandvars('$HOME'), 'deskconn.sock')),
+    "serializer": "cbor",
+}
+
+
+lock_comp = Component(transports=[transport], realm="deskconn", session_factory=ScreenLockComponent)
+mouse_comp = Component(transports=[transport], realm="deskconn", session_factory=MouseServerComponent)
+
 
 def main():
-    runner = ApplicationRunner("ws://127.0.0.1:5020/ws", "deskconn")
-    runner.run(MouseServerComponent, start_reactor=False)
-    runner.run(ScreenLockComponent)
+    run([lock_comp, mouse_comp])
 
 
 if __name__ == '__main__':
