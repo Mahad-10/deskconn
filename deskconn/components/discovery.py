@@ -21,13 +21,11 @@ SERVICE_DATA = """
 class ServiceDiscoveryComponent(wamp.ApplicationSession):
     def __init__(self, config=None):
         super().__init__(config)
-        self.service_dir = '$SNAP_COMMON/etc/avahi/services'
-        self.service_file = os.path.join(os.path.expandvars(self.service_dir), 'deskconn.service')
+        self.service_file = os.path.join(os.path.expandvars('$SNAP_COMMON'), 'deskconn.service')
 
     async def onJoin(self, details):
-        if os.path.exists(self.service_dir) and not os.path.exists(self.service_file):
-            with open(self.service_file) as file:
-                file.write(SERVICE_DATA)
+        with open(self.service_file) as file:
+            file.write(SERVICE_DATA)
 
     def onLeave(self, details):
         if os.path.exists(self.service_file):
