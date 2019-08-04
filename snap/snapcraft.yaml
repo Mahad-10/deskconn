@@ -38,6 +38,8 @@ parts:
     build-packages:
       - libdbus-1-dev
       - libdbus-glib-1-dev
+      - libffi-dev
+      - libssl-dev
 
 apps:
   deskconn:
