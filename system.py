@@ -19,27 +19,35 @@
 
 import os
 
-from crossbar import run
+from autobahn.twisted.component import Component, run
+from twisted.internet.endpoints import UNIXClientEndpoint
+from twisted.internet import reactor
+
+from deskconn.components.brightness import ScreenBrightnessComponent
 
 
 def _is_snap():
     return os.environ.get('SNAP_NAME') == 'deskconn'
 
 
-def get_start_params():
-    params = ['start']
-    if _is_snap():
-        params.append('--cbdir')
-        params.append(os.environ.get('SNAP_USER_DATA'))
-        params.append('--config')
-        params.append(os.path.join(os.environ.get('SNAP'), '.crossbar/config.yaml'))
-    else:
-        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
-    return params
+if not _is_snap():
+    os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
+
+transport = {
+    "type": "rawsocket",
+    "url": "ws://localhost/ws",
+    "endpoint": UNIXClientEndpoint(reactor,
+                                   os.path.join(os.path.expandvars('$SNAP_COMMON'),
+                                                'deskconn.sock')),
+    "serializer": "cbor",
+}
+
+
+lock_comp = Component(transports=[transport], realm="deskconn", session_factory=ScreenBrightnessComponent)
 
 
 def main():
-    run(get_start_params())
+    run([lock_comp])
 
 
 if __name__ == '__main__':

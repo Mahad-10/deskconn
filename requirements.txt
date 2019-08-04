@@ -1,6 +1,4 @@
-crossbar
 autobahn[twisted,serialization]
 twisted
 xlib
 dbus-python
-sqlitedict
