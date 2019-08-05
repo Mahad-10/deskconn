@@ -47,7 +47,7 @@ apps:
   deskconn:
     command: python3 -u $SNAP/system.py
     daemon: simple
-    restart-condition: always
+    restart-condition: never
     plugs:
       - network
       - network-bind
