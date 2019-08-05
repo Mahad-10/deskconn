@@ -18,6 +18,9 @@ architectures:
   - build-on: armhf
     run-on: armhf
 
+environment:
+  PYTHONPATH: PYTHONPATH:$SNAP_COMMON/deskconnd-runtime-dir
+
 parts:
   launchers:
     plugin: dump
@@ -33,13 +36,12 @@ parts:
   deskconn:
     plugin: python
     source: .
-    requirements:
-      - requirements.txt
+    python-packages:
+      - dbus-python
+      - xlib
     build-packages:
       - libdbus-1-dev
       - libdbus-glib-1-dev
-      - libffi-dev
-      - libssl-dev
 
 apps:
   deskconn:
@@ -62,8 +64,13 @@ apps:
     command: config.sh
 
 plugs:
-  deskconn-sock-dir:
+  deskconnd-sock-dir:
     content: socket-directory
-    default-provider: deskconnd:deskconn-sock-dir
+    default-provider: deskconnd:sock-dir
     interface: content
-    target: $SNAP_COMMON
+    target: $SNAP_COMMON/deskconnd-sock-dir
+  deskconnd-runtime-dir:
+    content: runtime-dir
+    default-provider: deskconnd:runtime-dir
+    interface: content
+    target: $SNAP_COMMON/deskconnd-runtime-dir

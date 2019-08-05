@@ -33,13 +33,14 @@ def _is_snap():
 
 if not _is_snap():
     # Make non-snap environment "feel like home"
-    os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME/deskconnd-sock-dir')
+    os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
 
 transport = {
     "type": "rawsocket",
     "url": "ws://localhost/ws",
     "endpoint": UNIXClientEndpoint(reactor,
-                                   os.path.join(os.path.expandvars('$SNAP_COMMON'), 'deskconn.sock')),
+                                   os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'),
+                                                'deskconnd.sock')),
     "serializer": "cbor",
 }
 
