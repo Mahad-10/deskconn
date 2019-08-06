@@ -18,38 +18,34 @@
 #
 
 import os
+import time
 
 from autobahn.twisted.component import Component, run
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet import reactor
+import txaio
 
 from deskconn.components.brightness import ScreenBrightnessComponent
 
-
-def _is_snap():
-    return os.environ.get('SNAP_NAME') == 'deskconn'
-
-
-if not _is_snap():
-    # Make non-snap environment "feel like home"
-    os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
-
-transport = {
-    "type": "rawsocket",
-    "url": "ws://localhost/ws",
-    "endpoint": UNIXClientEndpoint(reactor,
-                                   os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'),
-                                                'deskconnd.sock')),
-    "serializer": "cbor",
-}
-
-
-lock_comp = Component(transports=[transport], realm="deskconn", session_factory=ScreenBrightnessComponent)
-
-
-def main():
-    run([lock_comp])
+log = txaio.make_logger()
 
 
 if __name__ == '__main__':
-    main()
+    if os.environ.get("SNAP_NAME") != "deskconn":
+        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
+
+    sock_path = os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'), 'deskconnd.sock')
+    log.info("finding deskconnd...")
+    while not os.path.exists(sock_path):
+        time.sleep(1)
+        log.debug("deskconnd not found, please make sure its installed and running.")
+    log.info("found, now connecting.")
+
+    transport = {
+        "type": "rawsocket",
+        "url": "ws://localhost/ws",
+        "endpoint": UNIXClientEndpoint(reactor, sock_path),
+        "serializer": "cbor",
+    }
+
+    run([Component(transports=[transport], realm="deskconn", session_factory=ScreenBrightnessComponent)])
