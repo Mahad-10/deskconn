@@ -44,4 +44,6 @@ if __name__ == '__main__':
         "serializer": "cbor",
     }
 
-    run([Component(transports=[transport], realm="deskconn", session_factory=ScreenBrightnessComponent)])
+    component = Component(transports=[transport], realm="deskconn", session_factory=ScreenBrightnessComponent)
+    component._transports[0].max_retries = 0
+    run([component])

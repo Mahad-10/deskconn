@@ -46,5 +46,7 @@ if __name__ == '__main__':
     }
 
     lock_comp = Component(transports=[transport], realm="deskconn", session_factory=ScreenLockComponent)
+    lock_comp._transports[0].max_retries = 0
     mouse_comp = Component(transports=[transport], realm="deskconn", session_factory=MouseServerComponent)
+    mouse_comp._transports[0].max_retries = 0
     run([lock_comp, mouse_comp])
