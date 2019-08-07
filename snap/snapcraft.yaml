@@ -45,7 +45,7 @@ parts:
 
 apps:
   deskconn:
-    command: python3 -u $SNAP/system.py
+    command: system.py
     daemon: simple
     restart-condition: always
     plugs:
@@ -53,7 +53,7 @@ apps:
       - network-bind
       - display-control
   session:
-    command: python3 -u $SNAP/session.py
+    command: session.py
     plugs:
       - network
       - network-bind
