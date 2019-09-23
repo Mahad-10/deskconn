@@ -1,8 +1,24 @@
+#
+# Copyright (C) 2018-2019 Omer Akram
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
 import os
 
 import dbus
-from autobahn.twisted import wamp
-from twisted.internet.defer import inlineCallbacks
 
 
 DBUS_DATA = {
@@ -56,19 +72,3 @@ class Display:
         if not self.is_locked():
             getattr(self.iface, DBUS_DATA[self.environment]['methods']['lock'])()
         return self.is_locked()
-
-
-class ScreenLockComponent(wamp.ApplicationSession):
-    def __init__(self, config=None):
-        super().__init__(config)
-        self.display = Display()
-
-    @inlineCallbacks
-    def onJoin(self, details):
-        self.log.info('realm joined: {}'.format(details.realm))
-        yield self.register(self.display.is_locked, 'org.deskconn.display.is_locked')
-        yield self.register(self.display.lock, 'org.deskconn.display.lock')
-
-    def onLeave(self, details):
-        self.log.info('session left: {}'.format(details))
-        self.disconnect()

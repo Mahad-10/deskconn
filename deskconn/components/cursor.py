@@ -1,8 +1,24 @@
+#
+# Copyright (C) 2018-2019 Omer Akram
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
 import math
 import time
 
-from autobahn.twisted import wamp
-from twisted.internet.defer import inlineCallbacks
 from Xlib import display, X
 from Xlib.ext.xtest import fake_input
 
@@ -51,18 +67,3 @@ class MouseCursor:
     def position(self):
         coord = self.display.screen().root.query_pointer()._data
         return coord["root_x"], coord["root_y"]
-
-
-class MouseServerComponent(wamp.ApplicationSession):
-    def __init__(self, config=None):
-        super().__init__(config)
-        self.mouse = MouseCursor()
-
-    @inlineCallbacks
-    def onJoin(self, details):
-        self.log.info('realm joined: {}'.format(details.realm))
-        yield self.register(self.mouse.move, 'org.deskconn.mouse.move')
-
-    def onLeave(self, details):
-        self.log.info('session left: {}'.format(details))
-        self.disconnect()

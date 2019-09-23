@@ -23,7 +23,6 @@ import time
 from autobahn.twisted import wamp
 from twisted.internet import inotify
 from twisted.python import filepath
-from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet import threads
 
 DRIVER_ROOT = '/sys/class/backlight/intel_backlight/'
@@ -48,8 +47,10 @@ class _BrightnessControl:
     def max_brightness(self):
         return self._brightness_max
 
-    def validate_and_sanitize_brightness_value(self, value):
-        assert (isinstance(value, int) or isinstance(value, float)), 'brightness must be either int or float'
+    @staticmethod
+    def validate_and_sanitize_brightness_value(value):
+        assert (isinstance(value, int) or isinstance(value, float)),\
+            'brightness must be either int or float'
 
         if value < 1:
             return 1
@@ -66,7 +67,8 @@ class _BrightnessControl:
         with open(BRIGHTNESS_CONFIG_FILE) as config_file:
             return int(config_file.read().strip())
 
-    def write_brightness_value(self, value):
+    @staticmethod
+    def write_brightness_value(value):
         with open(BRIGHTNESS_CONFIG_FILE, 'w') as config_file:
             config_file.write(str(value))
 
@@ -129,8 +131,7 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
         self._reset_publisher = False
         self._last_value = -1
 
-    @inlineCallbacks
-    def onJoin(self, details):
+    async def onJoin(self, details):
         if not _BrightnessControl.has_backlight():
             return
 
@@ -141,8 +142,9 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
             callbacks=[self.publish_brightness_changed]
         )
 
-        yield self.register(self.set_brightness, 'org.deskconn.brightness.set')
-        yield self.register(self.controller.get_current_brightness_percentage, 'org.deskconn.brightness.get')
+        await self.register(self.set_brightness, 'org.deskconn.deskconn.brightness.set')
+        await self.register(self.controller.get_current_brightness_percentage,
+                            'org.deskconn.deskconn.brightness.get')
 
     def onLeave(self, details):
         if not _BrightnessControl.has_backlight():
@@ -150,15 +152,13 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
 
         self.notifier.stopReading()
 
-    @inlineCallbacks
-    def set_brightness(self, percentage, publisher_id=None):
+    async def set_brightness(self, percentage, publisher_id=None):
         def actually_set_brightness(percent, pub_id):
             self._publisher_id = pub_id
             self._requested_value_internal = self.controller.percent_to_internal(percent)
             self.controller.set_brightness(percent)
 
-        res = yield threads.deferToThread(actually_set_brightness, percentage, publisher_id)
-        returnValue(res)
+        return await threads.deferToThread(actually_set_brightness, percentage, publisher_id)
 
     def publish_brightness_changed(self, _ignored, file_path, _mask):
         with open(file_path.path) as file:
@@ -170,7 +170,7 @@ class ScreenBrightnessComponent(wamp.ApplicationSession):
             if current_value == self._last_value:
                 return
 
-            self.publish("org.deskconn.brightness.on_changed",
+            self.publish("org.deskconn.deskconn.brightness.on_changed",
                          percentage=int((current_value / self.controller.max_brightness) * 100),
                          publisher_id=self._publisher_id)
 

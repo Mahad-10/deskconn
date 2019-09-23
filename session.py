@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2018  Omer Akram
+# Copyright (C) 2018-2019 Omer Akram
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -18,17 +18,19 @@
 #
 
 import os
+import shlex
+import subprocess
 import time
 
 from autobahn.twisted.component import Component, run
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet import reactor
 
-from deskconn.components.lock_screen import ScreenLockComponent
-from deskconn.components.cursor import MouseServerComponent
+from deskconn.components.lock_screen import Display
+from deskconn.components.cursor import MouseCursor
 
 
-if __name__ == '__main__':
+def wait_for_deskconnd():
     if os.environ.get("SNAP_NAME") != "deskconn":
         os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
 
@@ -37,16 +39,34 @@ if __name__ == '__main__':
     while not os.path.exists(sock_path):
         time.sleep(1)
     print("found, now connecting.")
+    return sock_path
 
-    transport = {
-        "type": "rawsocket",
-        "url": "ws://localhost/ws",
-        "endpoint": UNIXClientEndpoint(reactor, sock_path),
-        "serializer": "cbor",
-    }
 
-    lock_comp = Component(transports=[transport], realm="deskconn", session_factory=ScreenLockComponent)
-    lock_comp._transports[0].max_retries = 0
-    mouse_comp = Component(transports=[transport], realm="deskconn", session_factory=MouseServerComponent)
-    mouse_comp._transports[0].max_retries = 0
-    run([lock_comp, mouse_comp])
+transport = {
+    "type": "rawsocket",
+    "url": "ws://localhost/ws",
+    "endpoint": UNIXClientEndpoint(reactor, wait_for_deskconnd()),
+    "serializer": "cbor",
+}
+component = Component(transports=[transport], realm="deskconn")
+
+
+def open_url(url):
+    subprocess.check_call(shlex.split("xdg-open {}".format(url)))
+
+
+@component.on_join
+async def joined(session, details):
+    session.log.info('realm joined: {}'.format(details.realm))
+    await session.register(open_url, 'org.deskconn.deskconn.url.open')
+
+    mouse = MouseCursor()
+    await session.register(mouse.move, 'org.deskconn.deskconn.mouse.move')
+
+    display = Display()
+    await session.register(display.is_locked, 'org.deskconn.deskconn.display.is_locked')
+    await session.register(display.lock, 'org.deskconn.deskconn.display.lock')
+
+
+if __name__ == '__main__':
+    run([component])
