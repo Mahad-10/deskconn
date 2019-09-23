@@ -18,9 +18,6 @@ architectures:
   - build-on: armhf
     run-on: armhf
 
-environment:
-  PYTHONPATH: PYTHONPATH:$SNAP_COMMON/crossbar-runtime-dir
-
 parts:
   launchers:
     plugin: dump
@@ -37,6 +34,7 @@ parts:
     plugin: python
     source: .
     python-packages:
+      - autobahn[twisted,serialization]
       - dbus-python
       - xlib
     build-packages:
@@ -69,8 +67,3 @@ plugs:
     default-provider: deskconnd:sock-dir
     interface: content
     target: $SNAP_COMMON/deskconnd-sock-dir
-  crossbar-runtime-dir:
-    content: executables
-    default-provider: crossbar:runtime-dir
-    interface: content
-    target: $SNAP_COMMON/crossbar-runtime-dir
