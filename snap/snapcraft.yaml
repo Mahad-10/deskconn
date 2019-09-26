@@ -13,7 +13,7 @@ architectures:
     run-on: amd64
 
 environment:
-  PYTHONPATH: $PYTHONPATH:$SNAP_COMMON/crossbar-runtime-dir
+  PYTHONPATH: $PYTHONPATH:$SNAP_COMMON/crossbar-runtime-dir/lib/python3.6/site-packages
 
 parts:
   launchers:
