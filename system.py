@@ -28,14 +28,22 @@ from deskconn.components.brightness import ScreenBrightnessComponent
 
 
 if __name__ == '__main__':
-    if os.environ.get("SNAP_NAME") != "deskconn":
+    if os.environ.get("SNAP_NAME") == "deskconn":
+        crossbar = os.path.expandvars("$SNAP_COMMON/crossbar-runtime-dir/bin/crossbar")
+        if not os.path.exists(crossbar):
+            print("Waiting for crossbar runtime directory interface to connect")
+            while not os.path.exists(crossbar):
+                time.sleep(1)
+        print("Found crossbar runtime environment")
+    else:
         os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
 
     sock_path = os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'), 'deskconnd.sock')
-    print("finding deskconnd...")
-    while not os.path.exists(sock_path):
-        time.sleep(1)
-    print("found, now connecting.")
+    if not os.path.exists(sock_path):
+        print("Deskconnd not running, will wait...")
+        while not os.path.exists(sock_path):
+            time.sleep(1)
+    print("Deskconnd found, now connecting.")
 
     transport = {
         "type": "rawsocket",
