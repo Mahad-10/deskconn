@@ -33,6 +33,7 @@ parts:
     python-packages:
       - dbus-python
       - xlib
+      - evdev
     build-packages:
       - libdbus-1-dev
       - libdbus-glib-1-dev

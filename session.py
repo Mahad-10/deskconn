@@ -27,11 +27,17 @@ from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet import reactor
 
 from deskconn.components.lock_screen import Display
-from deskconn.components.cursor import MouseCursor
 
 
 def wait_for_deskconnd():
-    if os.environ.get("SNAP_NAME") != "deskconn":
+    if os.environ.get("SNAP_NAME") == "deskconn":
+        crossbar = os.path.expandvars("$SNAP_COMMON/crossbar-runtime-dir/bin/crossbar")
+        if not os.path.exists(crossbar):
+            print("Waiting for crossbar runtime directory interface to connect")
+            while not os.path.exists(crossbar):
+                time.sleep(1)
+        print("Found crossbar runtime environment")
+    else:
         os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
 
     sock_path = os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'), 'deskconnd.sock')
@@ -59,9 +65,6 @@ def open_url(url):
 async def joined(session, details):
     session.log.info('realm joined: {}'.format(details.realm))
     await session.register(open_url, 'org.deskconn.deskconn.url.open')
-
-    mouse = MouseCursor()
-    await session.register(mouse.move, 'org.deskconn.deskconn.mouse.move')
 
     display = Display()
     await session.register(display.is_locked, 'org.deskconn.deskconn.display.is_locked')
