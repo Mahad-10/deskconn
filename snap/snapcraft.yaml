@@ -12,6 +12,15 @@ architectures:
   - build-on: amd64
     run-on: amd64
 
+  - build-on: i386
+    run-on: i386
+
+  - build-on: armhf
+    run-on: armhf
+
+  - build-on: arm64
+    run-on: arm64
+
 environment:
   PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP_COMMON/runtime/packages
   PATH: $PATH:$SNAP_COMMON/runtime/usr/bin
