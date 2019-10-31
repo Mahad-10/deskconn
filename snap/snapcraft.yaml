@@ -66,9 +66,11 @@ apps:
 plugs:
   deskconnd-runtime:
     interface: content
+    content: runtime
     default-provider: deskconnd:runtime
     target: $SNAP_COMMON/runtime
   deskconnd-state:
     interface: content
+    content: state
     default-provider: deskconnd:state
     target: $SNAP_COMMON/state
