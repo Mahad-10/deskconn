@@ -1,10 +1,4 @@
-import os
-
 from setuptools import setup
-
-
-# allow setup.py to be run from any path
-os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 VERSION = '0.9.0'
 
@@ -19,4 +13,5 @@ setup(
     description='Expose your desktop functionality over the network.',
     download_url='https://github.com/deskconn/deskconn/tarball/{}'.format(VERSION),
     keywords=['linux', 'ubuntu'],
+    install_requires=['dbus-python', 'xlib', 'evdev']
 )

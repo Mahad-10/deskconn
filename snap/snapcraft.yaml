@@ -13,7 +13,8 @@ architectures:
     run-on: amd64
 
 environment:
-  PYTHONPATH: $PYTHONPATH:$SNAP_COMMON/crossbar-runtime-dir/lib/python3.6/site-packages
+  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP_COMMON/runtime/packages
+  PATH: $PATH:$SNAP_COMMON/runtime/usr/bin
 
 parts:
   launchers:
@@ -28,19 +29,23 @@ parts:
       - session.py
       - config.sh
   deskconn:
-    plugin: python
+    plugin: nil
     source: .
-    python-packages:
-      - dbus-python
-      - xlib
-      - evdev
     build-packages:
       - libdbus-1-dev
       - libdbus-glib-1-dev
+      - software-properties-common
+    override-build: |
+      snapcraftctl build
+      add-apt-repository ppa:deadsnakes/ppa -y -u
+      apt install python3.8 python3.8-venv python3.8-dev -y
+      python3.8 -m ensurepip
+      python3.8 -m pip install --install-option="--prefix=$SNAPCRAFT_PART_INSTALL" .
+      find $SNAPCRAFT_PART_INSTALL -type d -name __pycache__ -print0 | xargs -0 rm -rf
 
 apps:
   deskconn:
-    command: system.py
+    command: python3.8 -u $SNAP/system.py
     daemon: simple
     restart-condition: always
     plugs:
@@ -48,7 +53,7 @@ apps:
       - network-bind
       - display-control
   session:
-    command: session.py
+    command: python3.8 -u $SNAP/session.py
     plugs:
       - network
       - network-bind
@@ -59,13 +64,11 @@ apps:
     command: config.sh
 
 plugs:
-  deskconnd-sock-dir:
-    content: socket-directory
-    default-provider: deskconnd:sock-dir
+  deskconnd-runtime:
     interface: content
-    target: $SNAP_COMMON/deskconnd-sock-dir
-  crossbar-runtime-dir:
-    content: executables
-    default-provider: crossbar:runtime-dir
+    default-provider: deskconnd:runtime
+    target: $SNAP_COMMON/runtime
+  deskconnd-state:
     interface: content
-    target: $SNAP_COMMON/crossbar-runtime-dir
+    default-provider: deskconnd:state
+    target: $SNAP_COMMON/state

@@ -18,6 +18,7 @@
 
 import os
 
+from autobahn import wamp
 import dbus
 
 
@@ -65,9 +66,11 @@ class Display:
                                            DBUS_DATA[self.environment]['path'])
         self.iface = dbus.Interface(self.screen_saver, DBUS_DATA[self.environment]['interface'])
 
+    @wamp.register(None)
     def is_locked(self):
         return getattr(self.iface, DBUS_DATA[self.environment]['methods']['is_locked'])()
 
+    @wamp.register(None)
     def lock(self):
         if not self.is_locked():
             getattr(self.iface, DBUS_DATA[self.environment]['methods']['lock'])()

@@ -17,59 +17,22 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import os
-import shlex
-import subprocess
-import time
+from autobahn.twisted.component import run
 
-from autobahn.twisted.component import Component, run
-from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.internet import reactor
-
+from deskconn.common import wait_for_deskconnd, get_component, PREFIX
 from deskconn.components.lock_screen import Display
+from deskconn.components.url import open
 
-
-def wait_for_deskconnd():
-    if os.environ.get("SNAP_NAME") == "deskconn":
-        crossbar = os.path.expandvars("$SNAP_COMMON/crossbar-runtime-dir/bin/crossbar")
-        if not os.path.exists(crossbar):
-            print("Waiting for crossbar runtime directory interface to connect")
-            while not os.path.exists(crossbar):
-                time.sleep(1)
-        print("Found crossbar runtime environment")
-    else:
-        os.environ['SNAP_COMMON'] = os.path.expandvars('$HOME')
-
-    sock_path = os.path.join(os.path.expandvars('$SNAP_COMMON/deskconnd-sock-dir'), 'deskconnd.sock')
-    print("finding deskconnd...")
-    while not os.path.exists(sock_path):
-        time.sleep(1)
-    print("found, now connecting.")
-    return sock_path
-
-
-transport = {
-    "type": "rawsocket",
-    "url": "ws://localhost/ws",
-    "endpoint": UNIXClientEndpoint(reactor, wait_for_deskconnd()),
-    "serializer": "cbor",
-}
-component = Component(transports=[transport], realm="deskconn")
-
-
-def open_url(url):
-    subprocess.check_call(shlex.split("xdg-open {}".format(url)))
+component = get_component()
 
 
 @component.on_join
 async def joined(session, details):
-    session.log.info('realm joined: {}'.format(details.realm))
-    await session.register(open_url, 'org.deskconn.deskconn.url.open')
-
-    display = Display()
-    await session.register(display.is_locked, 'org.deskconn.deskconn.display.is_locked')
-    await session.register(display.lock, 'org.deskconn.deskconn.display.lock')
+    session.log.info('session joined: {}'.format(details.realm))
+    await session.register(open, 'open', prefix=PREFIX.format(component="url"))
+    await session.register(Display(), prefix=PREFIX.format(component="display"))
 
 
 if __name__ == '__main__':
+    wait_for_deskconnd()
     run([component])

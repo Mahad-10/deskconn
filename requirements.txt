@@ -1,5 +1,5 @@
 autobahn[twisted,serialization]
 twisted
-xlib
 dbus-python
 evdev
+appdirs

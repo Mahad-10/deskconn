@@ -20,9 +20,7 @@ import math
 import os
 import time
 
-from autobahn.twisted import wamp
-from twisted.internet import inotify
-from twisted.python import filepath
+from autobahn import wamp
 from twisted.internet import threads
 
 DRIVER_ROOT = '/sys/class/backlight/intel_backlight/'
@@ -32,7 +30,7 @@ BRIGHTNESS_STEP = 25
 BRIGHTNESS_MIN = 1
 
 
-class _BrightnessControl:
+class BrightnessControl:
     def __init__(self):
         super().__init__()
         with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
@@ -72,14 +70,15 @@ class _BrightnessControl:
         with open(BRIGHTNESS_CONFIG_FILE, 'w') as config_file:
             config_file.write(str(value))
 
-    def get_current_brightness_percentage(self, current_brightness_raw=0):
-        # Calculate brightness percentage from provided "raw" value
-        if current_brightness_raw > 0:
-            return int((current_brightness_raw / self.max_brightness) * 100)
-        # Seems we need to read from the backend
+    @wamp.register(None)
+    async def get(self):
         return int((self.brightness_current / self.max_brightness) * 100)
 
-    def set_brightness(self, percent):
+    @wamp.register(None)
+    async def set(self, percent):
+        await threads.deferToThread(self._set, percent)
+
+    def _set(self, percent):
         brightness_requested = self.percent_to_internal(percent)
         # Abort any in progress change
         self.change_in_progress = False
@@ -115,69 +114,3 @@ class _BrightnessControl:
             self.write_brightness_value(brightness_requested)
 
         self.change_in_progress = False
-
-
-class ScreenBrightnessComponent(wamp.ApplicationSession):
-    def __init__(self, config=None):
-        super().__init__(config)
-        if not _BrightnessControl.has_backlight():
-            return
-
-        self.controller = _BrightnessControl()
-        self.notifier = inotify.INotify()
-
-        self._publisher_id = None
-        self._requested_value_internal = -1
-        self._reset_publisher = False
-        self._last_value = -1
-
-    async def onJoin(self, details):
-        if not _BrightnessControl.has_backlight():
-            return
-
-        self.notifier.startReading()
-        self.notifier.watch(
-            filepath.FilePath(BRIGHTNESS_CONFIG_FILE),
-            mask=inotify.IN_CHANGED,
-            callbacks=[self.publish_brightness_changed]
-        )
-
-        await self.register(self.set_brightness, 'org.deskconn.deskconn.brightness.set')
-        await self.register(self.controller.get_current_brightness_percentage,
-                            'org.deskconn.deskconn.brightness.get')
-
-    def onLeave(self, details):
-        if not _BrightnessControl.has_backlight():
-            return
-
-        self.notifier.stopReading()
-
-    async def set_brightness(self, percentage, publisher_id=None):
-        def actually_set_brightness(percent, pub_id):
-            self._publisher_id = pub_id
-            self._requested_value_internal = self.controller.percent_to_internal(percent)
-            self.controller.set_brightness(percent)
-
-        return await threads.deferToThread(actually_set_brightness, percentage, publisher_id)
-
-    def publish_brightness_changed(self, _ignored, file_path, _mask):
-        with open(file_path.path) as file:
-            current_value = int(file.read().strip())
-
-            # Inotify sometimes notifies duplicate events, we only
-            # want to publish a "brightness_changed" when its unique
-            # since last "change".
-            if current_value == self._last_value:
-                return
-
-            self.publish("org.deskconn.deskconn.brightness.on_changed",
-                         percentage=int((current_value / self.controller.max_brightness) * 100),
-                         publisher_id=self._publisher_id)
-
-            # Reset the "publisher" once brightness is set to the requested
-            # level so that any internal change (bright changes using keyboard buttons)
-            # doesn't do a publish with false "publisher".
-            if current_value == self._requested_value_internal:
-                self._publisher_id = None
-
-            self._last_value = current_value
