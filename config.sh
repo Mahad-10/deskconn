@@ -3,26 +3,17 @@
 echo "
 To allow deskconn to run in the background, you need to create a systemd unit,
 which ensures that deskconn automatically starts whenever your computer is
-restarted.
+restarted. To do that, just copy the following text, and run it in a terminal.
 
-To do the above, create a file named deskconn.service in /home/$USER/.config/systemd/user/
-If that directory doesn't exist, create it with:
 
-  $ mkdir -p /home/$USER/.config/systemd/user/
-
-and paste the below config inside it (/home/$USER/.config/systemd/user/deskconn.service)
-
-[Unit]
+mkdir -p /home/$USER/.config/systemd/user/
+echo '[Unit]
 Description=Deskconn session service
-
 [Service]
 ExecStart=/snap/bin/deskconn.session
-
 [Install]
-WantedBy=default.target
-
-Then run below commands to enable that service
-
+WantedBy=default.target' > /home/$USER/.config/systemd/user/deskconn.service"
+echo "
 systemctl --user enable deskconn.service
 systemctl --user start deskconn.service
 "
