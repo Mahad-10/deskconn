@@ -21,7 +21,7 @@ from autobahn.twisted.component import run
 
 from deskconn.common import wait_for_deskconnd, get_component, PREFIX
 from deskconn.components.lock_screen import Display
-from deskconn.components.url import open
+from deskconn.components.url import open_
 
 component = get_component()
 
@@ -29,7 +29,7 @@ component = get_component()
 @component.on_join
 async def joined(session, details):
     session.log.info('session joined: {}'.format(details.realm))
-    await session.register(open, 'open', prefix=PREFIX.format(component="url"))
+    await session.register(open_, 'open', prefix=PREFIX.format(component="url"))
     await session.register(Display(), prefix=PREFIX.format(component="display"))
 
 
