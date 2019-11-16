@@ -22,8 +22,8 @@ architectures:
     run-on: arm64
 
 environment:
-  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP_COMMON/runtime/packages
-  PATH: $PATH:$SNAP_COMMON/runtime/usr/bin
+  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP_COMMON/runtime/lib/python3.8/site-packages
+  PATH: $PATH:$SNAP_COMMON/runtime/usr/bin:$SNAP_COMMON/runtime/bin
 
 parts:
   launchers:
@@ -43,14 +43,13 @@ parts:
     build-packages:
       - libdbus-1-dev
       - libdbus-glib-1-dev
-      - software-properties-common
+      - wget
     override-build: |
       snapcraftctl build
-      add-apt-repository ppa:deadsnakes/ppa -y -u
       apt install python3.8 python3.8-venv python3.8-dev -y
-      python3.8 -m ensurepip
-      python3.8 -m pip install --install-option="--prefix=$SNAPCRAFT_PART_INSTALL" .
-      find $SNAPCRAFT_PART_INSTALL -type d -name __pycache__ -print0 | xargs -0 rm -rf
+      wget -O - https://bootstrap.pypa.io/get-pip.py | /usr/bin/python3.8 -u
+      /usr/bin/python3.8 -m pip install --no-compile --install-option="--prefix=$SNAPCRAFT_PART_INSTALL" .
+      find $SNAPCRAFT_PART_INSTALL -type f -name *.so -exec strip -s {} \;
 
 apps:
   deskconn:

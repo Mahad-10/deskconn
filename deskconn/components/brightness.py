@@ -33,8 +33,11 @@ BRIGHTNESS_MIN = 1
 class BrightnessControl:
     def __init__(self):
         super().__init__()
-        with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
-            self._brightness_max = int(file.read().strip())
+        if self.has_backlight():
+            with open(BRIGHTNESS_MAX_REFERENCE_FILE) as file:
+                self._brightness_max = int(file.read().strip())
+        else:
+            self._brightness_max = 0
         self.change_in_progress = False
 
     @staticmethod

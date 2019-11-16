@@ -16,7 +16,7 @@ def is_snap():
 
 def wait_for_deskconnd():
     if is_snap():
-        crossbar = os.path.expandvars("$SNAP_COMMON/runtime/packages/bin/crossbar")
+        crossbar = os.path.expandvars("$SNAP_COMMON/runtime/bin/crossbar")
         if not os.path.exists(crossbar):
             print("Waiting for deskconnd runtime directory interface to connect")
             while not os.path.exists(crossbar):
