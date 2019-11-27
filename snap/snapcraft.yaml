@@ -44,6 +44,8 @@ parts:
       - libdbus-1-dev
       - libdbus-glib-1-dev
       - wget
+    stage-packages:
+      - libnotify-bin
     override-build: |
       snapcraftctl build
       apt install python3.8 python3.8-venv python3.8-dev -y
