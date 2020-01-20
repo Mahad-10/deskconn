@@ -22,7 +22,7 @@ architectures:
     run-on: arm64
 
 environment:
-  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.8/site-packages:$SNAP_COMMON/runtime/lib/python3.8/site-packages
+  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.6/site-packages:$SNAP_COMMON/runtime/lib/python3.6/site-packages
   PATH: $PATH:$SNAP_COMMON/runtime/usr/bin:$SNAP_COMMON/runtime/bin
 
 parts:
@@ -44,18 +44,19 @@ parts:
       - libdbus-1-dev
       - libdbus-glib-1-dev
       - wget
+      - python3-pip
     stage-packages:
       - libnotify-bin
     override-build: |
       snapcraftctl build
-      apt install python3.8 python3.8-venv python3.8-dev -y
-      wget -O - https://bootstrap.pypa.io/get-pip.py | /usr/bin/python3.8 -u
-      /usr/bin/python3.8 -m pip install --no-compile --install-option="--prefix=$SNAPCRAFT_PART_INSTALL" .
-      find $SNAPCRAFT_PART_INSTALL -type f -name *.so -exec strip -s {} \;
+      python3 -O -m pip install --no-compile -U --prefix $SNAPCRAFT_PART_INSTALL .
+      python3 -O -m compileall -b $SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f -name "*.py" -exec rm {} \;
+      find $SNAPCRAFT_PART_INSTALL -type f -name "*.so" -exec strip -s {} \;
 
 apps:
   deskconn:
-    command: python3.8 -u $SNAP/system.py
+    command: system.py
     daemon: simple
     restart-condition: always
     plugs:
@@ -63,7 +64,7 @@ apps:
       - network-bind
       - display-control
   session:
-    command: python3.8 -u $SNAP/session.py
+    command: session.py
     plugs:
       - network
       - network-bind
