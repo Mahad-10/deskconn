@@ -24,6 +24,7 @@ from autobahn.twisted.component import run
 
 from deskconn.common import wait_for_deskconnd, get_component, PREFIX
 from deskconn.components.lock_screen import Display
+from deskconn.components.slides import Slides
 from deskconn.components.url import open_
 
 component = get_component()
@@ -39,6 +40,7 @@ async def joined(session, details):
     await session.register(open_, 'open', prefix=PREFIX.format(component="url"))
     await session.register(Display(), prefix=PREFIX.format(component="display"))
     await session.register(notify, 'notify', prefix=PREFIX.format(component="notify"))
+    await session.register(Slides(), prefix=PREFIX.format(component="slides"))
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@
 deps:
 	pip install -r requirements.txt
 
-server:
+system:
 	python3 -u system.py
 
 session:
